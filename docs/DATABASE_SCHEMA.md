@@ -20,18 +20,16 @@ Armazena os dados do usuário e do seu respectivo IDO. Esta tabela está ligada 
 
 ---
 
-### 2. `ido_stats`
-Armazena os atributos (status) principais do IDO. Eles afetam a "personalidade" do IDO no momento da geração de resposta pela IA.
+### 2. `ido_user_skills` (Substitui a antiga `ido_stats`)
+Armazena de forma escalável as skills desbloqueadas pelo IDO na Árvore de Habilidades (Tier 1 a 5).
 
 | Coluna | Tipo | Restrições / Padrões | Descrição |
 | :--- | :--- | :--- | :--- |
-| `user_id` | `uuid` | PRIMARY KEY, REFERENCES `profiles(id)` | ID do perfil dono deste IDO. |
-| `bobo` | `int` | DEFAULT 0 | Nível do atributo Bobo. |
-| `nerd` | `int` | DEFAULT 0 | Nível do atributo Nerd. |
-| `afrontoso` | `int` | DEFAULT 0 | Nível do atributo Afrontoso. |
-| `melancolico` | `int` | DEFAULT 0 | Nível do atributo Melancólico. |
-| `created_at` | `timestamp`| DEFAULT now() | Data de criação dos status. |
-| `updated_at` | `timestamp`| DEFAULT now() | Data da última alteração de atributos. |
+| `user_id` | `uuid` | PRIMARY KEY, REFERENCES `profiles(id)` | ID do perfil dono desta skill. |
+| `skill_id` | `text` | PRIMARY KEY | O ID da skill (ex: "bobo", "caotico"). Referencia o `skills_config.ts`. |
+| `current_level` | `int` | DEFAULT 1 | O nível atual desta skill para este usuário. |
+| `created_at` | `timestamp`| DEFAULT now() | Data de desbloqueio da skill. |
+| `updated_at` | `timestamp`| DEFAULT now() | Data do último upgrade na skill. |
 
 ---
 

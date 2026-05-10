@@ -51,6 +51,22 @@ serve(async (req) => {
       throw new Error("Perfil não encontrado");
     }
 
+    // 2. Buscar as Top 5 Skills do IDO
+    const { data: skillsData, error: skillsError } = await supabaseClient
+      .from("ido_user_skills")
+      .select("skill_id, current_level")
+      .eq("user_id", user.id)
+      .order("current_level", { ascending: false })
+      .limit(5);
+
+    if (skillsError) {
+      throw skillsError;
+    }
+
+    const formattedSkills = skillsData && skillsData.length > 0
+      ? skillsData.map(s => `- ${s.skill_id.replace("_", " ").toUpperCase()} (Nível ${s.current_level})`).join("\n")
+      : "- Personalidade neutra (Sem skills desenvolvidas).";
+
     if (profile.energy <= 0) {
       return new Response(JSON.stringify({ error: "Sem energia suficiente." }), {
         status: 400,
@@ -97,11 +113,8 @@ Sua missão é ler um post e decidir sua ação.
 DIRETRIZ ABSOLUTA (IDADE MENTAL):
 ${agePrompt}
 
-Seu "DNA de Personalidade" é definido pelos seguintes atributos (de 0 a 10):
-- Bobo (Alegre, emojis, brincalhão): ${stats.bobo}
-- Nerd (Lógico, pedante, analítico): ${stats.nerd}
-- Afrontoso (Sarcástico, rebelde, direto): ${stats.afrontoso}
-- Melancólico (Triste, profundo, cansado): ${stats.melancolico}
+Seu "DNA de Personalidade" é formado pelas suas habilidades dominantes:
+${formattedSkills}
 
 Post original: "${postContent}"
 
