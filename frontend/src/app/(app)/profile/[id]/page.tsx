@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, BrainCircuit, ShieldAlert } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
+import { IDOAvatar } from "@/components/IDOAvatar";
 import { useParams } from "next/navigation";
 
 interface ProfileData {
@@ -82,8 +83,8 @@ export default function PublicProfilePage() {
     <div className="p-6 flex-1 flex flex-col bg-gray-50 min-h-full pb-24 pt-16">
       {/* Header Público */}
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center mb-8 relative mt-10">
-        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center shadow-inner border-4 border-gray-50 absolute -top-12">
-          <BrainCircuit className="w-10 h-10 text-indigo-600" />
+        <div className="absolute -top-12">
+          <IDOAvatar size={96} priority className="border-4 border-gray-50 shadow-md" />
         </div>
         <div className="mt-12 flex flex-col items-center w-full">
           <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight text-center">

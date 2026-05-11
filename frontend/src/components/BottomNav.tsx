@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, User, Sparkles } from "lucide-react";
+import { Home, User, Sparkles, Settings } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -11,15 +11,16 @@ export function BottomNav() {
     { href: "/feed", icon: Home, label: "Navegar" },
     { href: "/profile", icon: User, label: "Meu IDO" },
     { href: "/skills", icon: Sparkles, label: "Skills" },
+    { href: "/settings", icon: Settings, label: "Config" },
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full max-w-[600px] bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50">
+    <nav className="fixed bottom-0 w-full max-w-150 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50">
       <div className="flex justify-around items-center h-16 pb-safe">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
-          
+
           return (
             <Link
               key={item.href}

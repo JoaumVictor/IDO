@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, BrainCircuit, Sparkles } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { IDOAvatar } from "./IDOAvatar";
 
 interface InteractionModalProps {
   isOpen: boolean;
@@ -29,22 +30,22 @@ export function InteractionModal({ isOpen, thought, onClose }: InteractionModalP
   if (!isOpen && !closing) return null;
 
   return (
-    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${closing ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${closing ? 'opacity-0' : 'opacity-100'}`}>
       <div className={`bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center transition-all duration-300 transform ${closing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}>
         
         {!thought ? (
           <>
-            <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center mb-5 border-4 border-indigo-100 relative">
-               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin absolute" />
-               <BrainCircuit className="w-6 h-6 text-indigo-300" />
+            <div className="relative mb-5">
+              <IDOAvatar size={80} priority />
+              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin absolute inset-0 m-auto" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-1">IDO Analisando...</h3>
             <p className="text-sm text-gray-500">Lendo a postagem e formulando o que acha disso.</p>
           </>
         ) : (
           <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-4 mx-auto relative overflow-hidden">
-               <Sparkles className="w-6 h-6 text-purple-600 animate-pulse" />
+            <div className="flex justify-center mb-4">
+              <IDOAvatar size={64} />
             </div>
             <h3 className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-3">Monólogo Interno</h3>
             <div className="bg-gray-50 rounded-2xl p-5 w-full relative">

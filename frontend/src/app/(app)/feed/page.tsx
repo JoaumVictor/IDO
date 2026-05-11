@@ -3,148 +3,100 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { PostCard } from "@/components/PostCard";
-import { Loader2, MessageCircle, Send } from "lucide-react";
+import { Loader2, MessageCircle, Zap } from "lucide-react";
 
-interface Post {
+interface PostWithCounts {
   id: string;
   content: string;
   created_at: string;
+  interactions: { count: number }[];
+  post_likes: { count: number }[];
 }
 
-const MAX_POST_LENGTH = 280;
-
 export default function FeedPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<PostWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
-  const [draft, setDraft] = useState("");
-  const [publishing, setPublishing] = useState(false);
-  const [publishError, setPublishError] = useState("");
+  const [energy, setEnergy] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      const { data } = await supabase
-        .from("posts")
-        .select("*")
-        .order("created_at", { ascending: false });
+    const fetchAll = async () => {
+      const [postsRes, authData] = await Promise.all([
+        supabase
+          .from("posts")
+          .select("id, content, created_at, interactions(count), post_likes(count)")
+          .order("created_at", { ascending: false }),
+        supabase.auth.getUser(),
+      ]);
 
-      if (data) {
-        setPosts(data);
+      if (postsRes.data) {
+        setPosts(postsRes.data as PostWithCounts[]);
       }
+
+      if (authData.data.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("energy")
+          .eq("id", authData.data.user.id)
+          .single();
+        if (profile) setEnergy(profile.energy);
+      }
+
       setLoading(false);
     };
 
-    fetchPosts();
+    fetchAll();
   }, []);
 
-  const handlePublish = async () => {
-    const content = draft.trim();
-    if (!content || publishing) return;
-
-    setPublishing(true);
-    setPublishError("");
-
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData.user) {
-      setPublishError("Você precisa estar logado para publicar.");
-      setPublishing(false);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("posts")
-      .insert({ content, author_id: authData.user.id })
-      .select()
-      .single();
-
-    if (error || !data) {
-      setPublishError(error?.message || "Não consegui publicar agora. Tenta de novo.");
-      setPublishing(false);
-      return;
-    }
-
-    setPosts((prev) => [data as Post, ...prev]);
-    setDraft("");
-    setPublishing(false);
-  };
-
-  const remaining = MAX_POST_LENGTH - draft.length;
-  const canPublish = draft.trim().length > 0 && remaining >= 0 && !publishing;
-
   return (
-    <div className="p-6 flex-1 flex flex-col bg-gray-50 min-h-full pb-24">
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-          Feed Global
-        </h1>
-        <p className="text-sm text-gray-500 font-medium mt-1">
-          Acompanhe e reaja aos pensamentos da rede.
-        </p>
-      </div>
+    <div className="flex-1 flex flex-col bg-linear-to-b from-indigo-50/40 via-gray-50 to-gray-50 min-h-full pb-24">
+      <div className="px-6 pt-6 pb-4 flex items-center justify-between sticky top-0 z-10 bg-linear-to-b from-indigo-50/90 via-gray-50/90 to-transparent backdrop-blur-sm">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+            Feed Global
+          </h1>
+          <p className="text-xs text-gray-500 font-medium mt-0.5">
+            Solte seu IDO na rede
+          </p>
+        </div>
 
-      <div className="bg-white rounded-3xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100/80 mb-6">
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          maxLength={MAX_POST_LENGTH}
-          rows={3}
-          placeholder="No que você está pensando?"
-          className="w-full resize-none bg-transparent text-[15px] leading-relaxed text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none"
-        />
-        {publishError && (
-          <p className="text-xs font-bold text-red-500 mt-2">{publishError}</p>
-        )}
-        <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
-          <span
-            className={`text-[11px] font-bold uppercase tracking-wider ${
-              remaining < 20 ? "text-red-500" : "text-gray-400"
-            }`}
-          >
-            {remaining} restantes
+        <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur border border-yellow-200/50 px-3 py-1.5 rounded-full shadow-sm">
+          <Zap className="w-3.5 h-3.5 text-yellow-500 fill-yellow-400" />
+          <span className="text-xs font-black text-gray-800 tracking-tight">
+            {energy ?? "—"}
           </span>
-          <button
-            onClick={handlePublish}
-            disabled={!canPublish}
-            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-full hover:bg-indigo-700 transition-all disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed active:scale-95 shadow-sm"
-          >
-            {publishing ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Publicando...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Publicar
-              </>
-            )}
-          </button>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            energia
+          </span>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-        </div>
-      ) : posts.length > 0 ? (
-        <div className="flex flex-col">
-          {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              id={post.id}
-              content={post.content}
-              createdAt={post.created_at}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <MessageCircle className="w-8 h-8 text-gray-300" />
+      <div className="px-6 pt-2">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
           </div>
-          <p className="text-gray-400 font-bold">Nenhum post no momento.</p>
-          <p className="text-gray-400 text-sm mt-1">Seja o primeiro a enviar algo!</p>
-        </div>
-      )}
+        ) : posts.length > 0 ? (
+          <div className="flex flex-col">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                id={post.id}
+                content={post.content}
+                createdAt={post.created_at}
+                commentsCount={post.interactions?.[0]?.count ?? 0}
+                likesCount={post.post_likes?.[0]?.count ?? 0}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <MessageCircle className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-gray-400 font-bold">Nenhum post no momento.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

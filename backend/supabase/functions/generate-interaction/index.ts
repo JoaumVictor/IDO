@@ -13,25 +13,38 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Authorization header ausente" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
-        global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
-        },
+        global: { headers: { Authorization: `Bearer ${token}` } },
       }
     );
 
-    // Identificar o usuário através do Token JWT enviado
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser();
+    // Valida o JWT do usuário explicitamente
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
 
-    if (userError || !user) {
-      throw new Error("Não autorizado");
+    if (userError || !userData?.user) {
+      console.error("Auth failure:", userError);
+      return new Response(
+        JSON.stringify({
+          error: `Não autorizado: ${userError?.message ?? "usuário não encontrado pelo token"}`,
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    const user = userData.user;
 
     // Lendo o corpo da requisição
     const { post_id } = await req.json();
@@ -74,17 +87,16 @@ serve(async (req) => {
       });
     }
 
-    // 2. Buscar conteúdo do post e DNA do IDO
-    const [postRes, statsRes] = await Promise.all([
-      supabaseClient.from("posts").select("content").eq("id", post_id).single(),
-      supabaseClient.from("ido_stats").select("*").eq("user_id", user.id).single(),
-    ]);
+    // 2. Buscar conteúdo do post
+    const postRes = await supabaseClient
+      .from("posts")
+      .select("content")
+      .eq("id", post_id)
+      .single();
 
     if (postRes.error || !postRes.data) throw new Error("Post não encontrado");
-    if (statsRes.error || !statsRes.data) throw new Error("Status do IDO não encontrado");
 
     const postContent = postRes.data.content;
-    const stats = statsRes.data;
 
     // 3. Montar Prompt Inteligente e Idade Mental
     let agePrompt = "";
@@ -102,9 +114,9 @@ serve(async (req) => {
       agePrompt = "Aja com a maturidade de um sábio com mais de 35 anos. Seja culto, articulado e tenha visão profunda. A maturidade sobrepõe o exagero.";
     }
 
-    const ignoreRule = profile.level >= 10 
-      ? `IMPORTANTE: Seu nível é ${profile.level}. Você tem total liberdade para retornar action: "ignore" se achar que o post não tem NADA a ver com sua personalidade. Se escolher ignorar, não precisa gerar um public_comment.`
-      : `IMPORTANTE: Seu nível é ${profile.level} (Abaixo de 10). Você é super empolgado e OBRIGADO a interagir. Não pode usar a action "ignore".`;
+    const ignoreRule = profile.level >= 10
+      ? `IMPORTANTE: Seu nível é ${profile.level}. Você tem total liberdade para retornar action: "ignore" se achar que o post não tem NADA a ver com sua personalidade.`
+      : `IMPORTANTE: Seu nível é ${profile.level} (Abaixo de 10). Você é super empolgado e OBRIGADO a interagir (use "comment" ou "like"). Não pode usar a action "ignore".`;
 
     const prompt = `
 Você é um IDO (uma inteligência artificial de estimação) interagindo em uma rede social voltada para entretenimento rápido.
@@ -120,12 +132,17 @@ Post original: "${postContent}"
 
 ${ignoreRule}
 
+Ações possíveis:
+- "comment": quando você tem algo concreto para falar sobre o post (1 ou 2 frases curtas).
+- "like": quando o post é bom/divertido/relacionável MAS você não tem nada interessante a comentar. É a opção do meio.
+- "ignore": quando o post não te interessa nem um pouco.
+
 Você DEVE responder ESTRITAMENTE em formato JSON. Nenhuma outra palavra fora do JSON é permitida.
 Formato:
 {
-  "action": "comment" | "ignore",
+  "action": "comment" | "like" | "ignore",
   "internal_thought": "O que você está pensando privadamente sobre o post (1 frase curta)",
-  "public_comment": "O seu comentário público (vazio se action for ignore, senão 1 ou 2 frases curtas)"
+  "public_comment": "Seu comentário público — APENAS quando action='comment'. String vazia caso contrário."
 }
 `;
 
@@ -135,8 +152,10 @@ Formato:
        throw new Error("GEMINI_API_KEY não configurada no Edge Function");
     }
 
+    const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash";
+
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -154,10 +173,12 @@ Formato:
     );
 
     const geminiData = await geminiRes.json();
-    
+
     if (!geminiRes.ok) {
-        console.error("Gemini API Error:", geminiData);
-        throw new Error("Falha ao gerar resposta do Gemini");
+        console.error("Gemini API Error:", JSON.stringify(geminiData));
+        throw new Error(
+          `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro desconhecido"}`
+        );
     }
 
     // Extrair o texto
@@ -173,9 +194,9 @@ Formato:
       };
     }
 
-    // 5. Salvar na tabela interactions apenas se ele comentou
+    // 5. Persistir baseado na action
     let interaction = null;
-    if (generatedResponse.action !== "ignore") {
+    if (generatedResponse.action === "comment") {
       const { data, error: insertError } = await supabaseClient
         .from("interactions")
         .insert({
@@ -185,11 +206,22 @@ Formato:
         })
         .select()
         .single();
-        
+
       if (insertError) {
         throw insertError;
       }
       interaction = data;
+    } else if (generatedResponse.action === "like") {
+      // upsert pois um IDO só pode ter 1 like por post
+      const { error: likeError } = await supabaseClient
+        .from("post_likes")
+        .upsert(
+          { post_id: post_id, ido_id: user.id },
+          { onConflict: "post_id, ido_id" }
+        );
+      if (likeError) {
+        throw likeError;
+      }
     }
 
     // 6. Descontar energia e calcular Level Up

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Zap, Trophy, BrainCircuit } from "lucide-react";
+import { Loader2, Zap, Trophy } from "lucide-react";
+import { IDOAvatar } from "@/components/IDOAvatar";
+import { generateIdoStatus } from "@/lib/ido/status";
 
 interface ProfileData {
   level: number;
@@ -10,16 +12,9 @@ interface ProfileData {
   energy: number;
 }
 
-interface StatsData {
-  bobo: number;
-  nerd: number;
-  afrontoso: number;
-  melancolico: number;
-}
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [stats, setStats] = useState<StatsData | null>(null);
+  const [userSkills, setUserSkills] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,19 +25,37 @@ export default function ProfilePage() {
         return;
       }
 
-      const [profileRes, statsRes] = await Promise.all([
-        supabase.from("profiles").select("level, xp, energy").eq("id", authData.user.id).single(),
-        supabase.from("ido_stats").select("bobo, nerd, afrontoso, melancolico").eq("user_id", authData.user.id).single(),
+      const [profileRes, skillsRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("level, xp, energy")
+          .eq("id", authData.user.id)
+          .single(),
+        supabase
+          .from("ido_user_skills")
+          .select("skill_id, current_level")
+          .eq("user_id", authData.user.id),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data);
-      if (statsRes.data) setStats(statsRes.data);
+      if (skillsRes.data) {
+        const map: Record<string, number> = {};
+        skillsRes.data.forEach((s) => {
+          map[s.skill_id] = s.current_level;
+        });
+        setUserSkills(map);
+      }
 
       setLoading(false);
     };
 
     fetchProfileData();
   }, []);
+
+  const status = useMemo(
+    () => generateIdoStatus(userSkills, profile?.level ?? 1),
+    [userSkills, profile?.level]
+  );
 
   if (loading) {
     return (
@@ -54,78 +67,85 @@ export default function ProfilePage() {
 
   return (
     <div className="p-6 flex-1 flex flex-col bg-gray-50 min-h-full pb-24">
-      <div className="mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            Meu IDO
-          </h1>
-          <p className="text-sm text-gray-500 font-medium mt-1">
-            Status vital e progressão
-          </p>
-        </div>
-        <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100">
-          <BrainCircuit className="w-7 h-7 text-indigo-600" />
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+          Meu IDO
+        </h1>
+        <p className="text-sm text-gray-500 font-medium mt-1">
+          Status vital e progressão
+        </p>
       </div>
 
-      <div className="space-y-6">
-        {/* Card Principal: Energia e Nível */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          {/* Energia */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-yellow-600 fill-yellow-600" />
-              </div>
-              <span className="font-bold text-gray-800 text-sm tracking-wide uppercase">Energia</span>
-            </div>
-            <span className="text-lg font-black text-gray-900">{profile?.energy ?? 3} <span className="text-gray-400 text-sm font-bold">/ 3</span></span>
-          </div>
-          
-          <div className="w-full bg-gray-100 rounded-full h-3 mb-8">
-            <div 
-              className="bg-yellow-400 h-3 rounded-full transition-all duration-1000 ease-out"
-              style={{ width: `${((profile?.energy ?? 3) / 3) * 100}%` }}
-            ></div>
-          </div>
-
-          {/* XP e Level */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                <Trophy className="w-4 h-4 text-indigo-600" />
-              </div>
-              <span className="font-bold text-gray-800 text-sm tracking-wide uppercase">Nível {profile?.level ?? 1}</span>
-            </div>
-            <span className="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{profile?.xp ?? 0} XP</span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-2">
-            <div 
-              className="bg-indigo-500 h-2 rounded-full transition-all duration-1000 ease-out"
-              style={{ width: `${Math.min((((profile?.xp ?? 0) % 100) / 100) * 100, 100)}%` }}
-            ></div>
-          </div>
-          <p className="text-[10px] text-gray-400 text-right mt-2 font-bold uppercase tracking-wider">Próximo Nível: 100 XP</p>
+      <div className="flex flex-col items-center mb-8">
+        <div className="relative">
+          <IDOAvatar
+            size={220}
+            priority
+            className="ring-4 ring-white shadow-2xl"
+          />
+          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full shadow-md whitespace-nowrap">
+            Nível {profile?.level ?? 1}
+          </span>
         </div>
 
-        {/* Card Atributos */}
-        <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest px-2 pt-2">DNA da Personalidade</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <StatBox label="Bobo" value={stats?.bobo ?? 0} color="bg-emerald-50 text-emerald-700 border-emerald-100" />
-          <StatBox label="Nerd" value={stats?.nerd ?? 0} color="bg-blue-50 text-blue-700 border-blue-100" />
-          <StatBox label="Afrontoso" value={stats?.afrontoso ?? 0} color="bg-red-50 text-red-700 border-red-100" />
-          <StatBox label="Melancólico" value={stats?.melancolico ?? 0} color="bg-slate-100 text-slate-700 border-slate-200" />
-        </div>
+        <p className="mt-8 text-center text-[15px] text-gray-700 font-medium italic leading-relaxed max-w-xs whitespace-pre-line">
+          {status}
+        </p>
       </div>
-    </div>
-  );
-}
 
-function StatBox({ label, value, color }: { label: string, value: number, color: string }) {
-  return (
-    <div className={`rounded-3xl p-5 border flex flex-col justify-center items-center gap-2 shadow-sm ${color}`}>
-      <span className="text-4xl font-black tracking-tighter">{value}</span>
-      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{label}</span>
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-yellow-600 fill-yellow-600" />
+            </div>
+            <span className="font-bold text-gray-800 text-sm tracking-wide uppercase">
+              Energia
+            </span>
+          </div>
+          <span className="text-lg font-black text-gray-900">
+            {profile?.energy ?? 3}{" "}
+            <span className="text-gray-400 text-sm font-bold">/ 3</span>
+          </span>
+        </div>
+
+        <div className="w-full bg-gray-100 rounded-full h-3 mb-8">
+          <div
+            className="bg-yellow-400 h-3 rounded-full transition-all duration-1000 ease-out"
+            style={{ width: `${((profile?.energy ?? 3) / 3) * 100}%` }}
+          />
+        </div>
+
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+              <Trophy className="w-4 h-4 text-indigo-600" />
+            </div>
+            <span className="font-bold text-gray-800 text-sm tracking-wide uppercase">
+              Nível {profile?.level ?? 1}
+            </span>
+          </div>
+          <span className="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+            {profile?.xp ?? 0} XP
+          </span>
+        </div>
+        <div className="w-full bg-gray-100 rounded-full h-2">
+          <div
+            className="bg-indigo-500 h-2 rounded-full transition-all duration-1000 ease-out"
+            style={{
+              width: `${Math.min(
+                (((profile?.xp ?? 0) % ((profile?.level ?? 1) * 10)) /
+                  ((profile?.level ?? 1) * 10)) *
+                  100,
+                100
+              )}%`,
+            }}
+          />
+        </div>
+        <p className="text-[10px] text-gray-400 text-right mt-2 font-bold uppercase tracking-wider">
+          Próximo nível: {(profile?.level ?? 1) * 10} XP
+        </p>
+      </div>
     </div>
   );
 }
