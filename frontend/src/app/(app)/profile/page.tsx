@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Zap, Trophy } from "lucide-react";
+import Link from "next/link";
+import { Loader2, Zap, Trophy, Box } from "lucide-react";
 import { IDOAvatar } from "@/components/IDOAvatar";
 import { generateIdoStatus } from "@/lib/ido/status";
 
@@ -91,6 +92,14 @@ export default function ProfilePage() {
         <p className="mt-8 text-center text-[15px] text-gray-700 font-medium italic leading-relaxed max-w-xs whitespace-pre-line">
           {status}
         </p>
+
+        <Link
+          href="/ido-3d"
+          className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white text-xs font-black tracking-widest uppercase rounded-full shadow-lg hover:bg-zinc-800 active:scale-[0.98] transition"
+        >
+          <Box className="w-4 h-4" />
+          Ver em 3D
+        </Link>
       </div>
 
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">

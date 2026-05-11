@@ -5,7 +5,8 @@
       "Bash(where deno *)",
       "Bash(where node *)",
       "Bash(supabase --version)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npm install *)"
     ]
   }
 }
