@@ -16,6 +16,7 @@ Armazena os dados do usuário e do seu respectivo IDO. Esta tabela está ligada 
 | `xp` | `int` | DEFAULT 0 | Pontos de experiência atuais. |
 | `energy` | `int` | DEFAULT 3 | Energia diária para interações. |
 | `points` | `int` | DEFAULT 0 | Pontos disponíveis para gastar na Skill Tree. |
+| `is_admin` | `boolean` | NOT NULL, DEFAULT false | Flag de admin (libera acesso ao God Panel e ao RPC `reset_global_energy`). |
 | `created_at`| `timestamp`| DEFAULT now() | Data de criação do perfil. |
 
 ---
@@ -55,3 +56,10 @@ Registra as respostas geradas pelos IDOs nos posts do feed, consumindo 1 ponto d
 | `ido_id` | `uuid` | REFERENCES `profiles(id)` | IDO (usuário) que respondeu. |
 | `response` | `text` | NOT NULL | Texto gerado pela IA. |
 | `created_at` | `timestamp`| DEFAULT now() | Data e hora da resposta. |
+
+---
+
+## Funções RPC
+
+### `reset_global_energy()`
+RPC `SECURITY DEFINER` que zera (volta a 3) a energia de todos os perfis. Verifica `profiles.is_admin = true` para o `auth.uid()` chamador antes de executar; senão, lança `forbidden`. Retorna a quantidade de linhas atualizadas. Disparada pelo botão de destaque do God Panel (`/master-control-ido`).
