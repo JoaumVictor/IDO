@@ -7,11 +7,19 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 const FACE_ASSETS: Record<Layer, string[]> = {
-  base:      ["/assets/face/base_01.png"],
-  eyebrows:  ["/assets/face/eyebrows_01.png", "/assets/face/eyebrows_02.png"],
-  eyes:      ["/assets/face/eyes_01.png",     "/assets/face/eyes_02.png", "/assets/face/eyes_03.png"],
-  cheeks:    ["/assets/face/cheeks_01.png",   "/assets/face/cheeks_02.png"],
-  mouth:     ["/assets/face/mouth_01.png",    "/assets/face/mouth_02.png", "/assets/face/mouth_03.png"],
+  base: ["/assets/face/base_01.png"],
+  eyebrows: ["/assets/face/eyebrows_01.png", "/assets/face/eyebrows_02.png"],
+  eyes: [
+    "/assets/face/eyes_01.png",
+    "/assets/face/eyes_02.png",
+    "/assets/face/eyes_03.png",
+  ],
+  cheeks: ["/assets/face/cheeks_01.png", "/assets/face/cheeks_02.png"],
+  mouth: [
+    "/assets/face/mouth_01.png",
+    "/assets/face/mouth_02.png",
+    "/assets/face/mouth_03.png",
+  ],
 };
 
 const LAYER_ORDER = ["base", "eyebrows", "eyes", "cheeks", "mouth"] as const;
@@ -67,33 +75,27 @@ export default function Ido3DPage() {
     renderer.toneMappingExposure = 1.05;
     mount.appendChild(renderer.domElement);
 
-    // --- Material do corpo: flatShading pra ver as facetas low-poly ---
+    // --- Material do corpo: smooth shading pra bevel gradiente suave ---
     const bodyMaterial = new THREE.MeshStandardMaterial({
       color: 0x111111,
       roughness: 0.92,
       metalness: 0,
-      flatShading: true,
     });
 
-    // --- Corpo: icosaedro low-poly (detail=1 → ~80 faces visíveis) ---
-    const bodyGeometry = new THREE.IcosahedronGeometry(1.05, 1);
-    bodyGeometry.scale(0.95, 1.15, 0.95);
+    // --- Silhueta completa do IDO (corpo + orelhas em um único Shape) ---
+    const shape = buildIdoShape();
+    const extrudeSettings: THREE.ExtrudeGeometryOptions = {
+      depth: 0.75,
+      bevelEnabled: true,
+      bevelThickness: 0.1,
+      bevelSize: 0.1,
+      bevelSegments: 10, // bordas bem arredondadas pra capturar luz
+      curveSegments: 32, // silhueta suave
+    };
+    const bodyGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    bodyGeometry.center();
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     scene.add(body);
-
-    // --- Orelhas: cones de 4 lados (facetas pontudas e visíveis) ---
-    const earGeometry = new THREE.ConeGeometry(0.32, 0.75, 4, 1);
-    const earL = new THREE.Mesh(earGeometry, bodyMaterial);
-    earL.position.set(-0.55, 1.4, 0.05);
-    earL.rotation.z = 0.14;
-    earL.rotation.y = Math.PI / 4; // gira a base pra mostrar uma aresta de frente
-    scene.add(earL);
-
-    const earR = new THREE.Mesh(earGeometry, bodyMaterial);
-    earR.position.set(0.55, 1.4, 0.05);
-    earR.rotation.z = -0.14;
-    earR.rotation.y = Math.PI / 4;
-    scene.add(earR);
 
     // --- Plano do rosto (canvas texture) — colado à frente do corpo ---
     const faceCanvas = document.createElement("canvas");
@@ -113,27 +115,23 @@ export default function Ido3DPage() {
       depthWrite: false,
     });
     const facePlane = new THREE.Mesh(faceGeometry, faceMaterial);
-    facePlane.position.set(0, 0.15, 0.96);
+    // depth/2 + bevelThickness + tiny offset
+    facePlane.position.set(0, 0.2, 0.49);
     scene.add(facePlane);
 
-    // --- Iluminação underlight dramática (warm spotlight de baixo) ---
+    // --- Iluminação underlight PURA (única fonte) ---
     const underlight = new THREE.SpotLight(
       0xffd28a,
-      45,             // intensity alta
-      8,              // distance
-      Math.PI / 3,    // angle (60°)
-      0.5,            // penumbra suave
-      1.2             // decay físico
+      80, // intensity alta — é a única luz da cena
+      12, // distance
+      Math.PI / 2.6, // angle (~70°)
+      0.5, // penumbra suave
+      1.3, // decay físico
     );
-    underlight.position.set(0, -2.0, 1.6);
+    underlight.position.set(0, -2.4, 2.2);
     underlight.target.position.set(0, 0.3, 0);
     scene.add(underlight);
     scene.add(underlight.target);
-
-    // Rim frio no topo pra produzir o gradiente roxo da referência
-    const rim = new THREE.PointLight(0x4a5cc0, 3, 8, 1.8);
-    rim.position.set(0, 2.8, 1.4);
-    scene.add(rim);
 
     // --- Controles (rotação suave) ---
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -258,7 +256,9 @@ export default function Ido3DPage() {
                   return (
                     <button
                       key={i}
-                      onClick={() => setSelection((s) => ({ ...s, [layer]: i }))}
+                      onClick={() =>
+                        setSelection((s) => ({ ...s, [layer]: i }))
+                      }
                       className={`h-12 rounded-xl border text-xs font-black transition ${
                         active
                           ? "bg-white text-black border-white shadow-lg shadow-white/10"
@@ -276,13 +276,48 @@ export default function Ido3DPage() {
           <p className="text-[10px] text-zinc-600 leading-relaxed pt-2 border-t border-white/5">
             Arraste o personagem pra rotacionar. As variações de rosto puxam de{" "}
             <code className="text-zinc-400">/public/assets/face/</code>; coloque
-            PNGs transparentes ({FACE_CANVAS_SIZE}×{FACE_CANVAS_SIZE}) nos
-            nomes esperados pra substituir os placeholders.
+            PNGs transparentes ({FACE_CANVAS_SIZE}×{FACE_CANVAS_SIZE}) nos nomes
+            esperados pra substituir os placeholders.
           </p>
         </aside>
       </div>
     </div>
   );
+}
+
+// ============================================================
+// Geometria: silhueta completa do IDO (corpo arredondado + cat ears)
+// Único Shape contínuo — assim o extrude une tudo com bevels suaves.
+// ============================================================
+function buildIdoShape(): THREE.Shape {
+  const s = new THREE.Shape();
+
+  // Base inferior arredondada (sutil curva no chão)
+  s.moveTo(-1.0, -1.35);
+  s.quadraticCurveTo(0, -1.5, 1.0, -1.35);
+
+  // Lateral direita subindo (cintura suave do corpo)
+  s.bezierCurveTo(1.1, -0.7, 0.95, 0.2, 0.85, 0.7);
+
+  // Ombro/transição pra cabeça
+  s.bezierCurveTo(0.8, 0.85, 0.7, 0.95, 0.58, 1.0);
+
+  // Subida pra ponta da orelha direita
+  s.lineTo(0.78, 1.6);
+
+  // Vale entre as orelhas (suave, mais alto no centro)
+  s.lineTo(0.32, 0.92);
+  s.quadraticCurveTo(0, 1.05, -0.32, 0.92);
+
+  // Ponta da orelha esquerda
+  s.lineTo(-0.78, 1.6);
+
+  // Descida pelo lado esquerdo
+  s.lineTo(-0.58, 1.0);
+  s.bezierCurveTo(-0.7, 0.95, -0.8, 0.85, -0.85, 0.7);
+  s.bezierCurveTo(-0.95, 0.2, -1.1, -0.7, -1.0, -1.35);
+
+  return s;
 }
 
 // ============================================================
@@ -302,7 +337,11 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 // Fallback procedural (caso o PNG não esteja em /public ainda)
 // Desenha primitivas no canvas pra você já ver algo no IDO.
 // ============================================================
-function drawFallback(ctx: CanvasRenderingContext2D, layer: Layer, idx: number) {
+function drawFallback(
+  ctx: CanvasRenderingContext2D,
+  layer: Layer,
+  idx: number,
+) {
   const S = FACE_CANVAS_SIZE;
   const cx = S / 2;
   ctx.save();
@@ -369,7 +408,8 @@ function drawFallback(ctx: CanvasRenderingContext2D, layer: Layer, idx: number) 
     }
 
     case "cheeks": {
-      ctx.fillStyle = idx === 0 ? "rgba(255,160,160,0.55)" : "rgba(255,200,80,0.45)";
+      ctx.fillStyle =
+        idx === 0 ? "rgba(255,160,160,0.55)" : "rgba(255,200,80,0.45)";
       const cheekY = S * 0.56;
       const dx = 140;
       ctx.beginPath();
