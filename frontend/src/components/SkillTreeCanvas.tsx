@@ -145,7 +145,7 @@ export function SkillTreeCanvas({
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 overflow-hidden bg-zinc-950 touch-none select-none"
+      className="absolute inset-0 overflow-hidden bg-canvas touch-none select-none"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -285,24 +285,24 @@ export function SkillTreeCanvas({
         })}
       </div>
 
-      <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-10">
+      <div className="absolute bottom-28 right-5 flex flex-col gap-3 z-10">
         <button
           onClick={() => zoomAt(1.2)}
-          className="w-11 h-11 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shadow-lg hover:bg-zinc-800 active:scale-95 transition"
+          className="neo-raised-xs w-12 h-12 rounded-full text-text-secondary flex items-center justify-center hover:text-accent active:scale-95 transition"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-5 h-5" strokeWidth={2.5} />
         </button>
         <button
           onClick={() => zoomAt(0.83)}
-          className="w-11 h-11 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shadow-lg hover:bg-zinc-800 active:scale-95 transition"
+          className="neo-raised-xs w-12 h-12 rounded-full text-text-secondary flex items-center justify-center hover:text-accent active:scale-95 transition"
         >
-          <Minus className="w-5 h-5" />
+          <Minus className="w-5 h-5" strokeWidth={2.5} />
         </button>
         <button
           onClick={recenter}
-          className="w-11 h-11 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shadow-lg hover:bg-zinc-800 active:scale-95 transition"
+          className="neo-raised-xs w-12 h-12 rounded-full text-text-secondary flex items-center justify-center hover:text-accent active:scale-95 transition"
         >
-          <Locate className="w-5 h-5" />
+          <Locate className="w-5 h-5" strokeWidth={2.5} />
         </button>
       </div>
     </div>

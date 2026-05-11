@@ -59,7 +59,7 @@ export default function Ido3DPage() {
 
     // --- Scene ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
+    scene.background = new THREE.Color(0x101820);
 
     // --- Camera (front view, leve tilt pra cima como na referência) ---
     const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 100);
@@ -218,39 +218,41 @@ export default function Ido3DPage() {
   }, [updateFace]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
-      <header className="px-4 py-3 flex items-center gap-3 border-b border-white/5 shrink-0">
+    <div className="min-h-screen bg-canvas text-white flex flex-col">
+      <header className="px-5 py-4 flex items-center gap-3 shrink-0" style={{ borderBottom: "1px solid #243240" }}>
         <Link
           href="/profile"
-          className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition"
+          className="neo-raised-xs w-11 h-11 rounded-full flex items-center justify-center text-text-secondary hover:text-accent transition"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" strokeWidth={2.5} />
         </Link>
         <div className="flex-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 leading-none">
+          <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted leading-none">
             IDO 3D
           </p>
-          <p className="text-sm font-black tracking-tight mt-0.5">
+          <p className="font-display text-sm font-black tracking-tight mt-1">
             Atelier de Personagem
           </p>
         </div>
-        <Sparkles className="w-5 h-5 text-amber-300" />
+        <div className="neo-raised-xs w-11 h-11 rounded-full flex items-center justify-center">
+          <Sparkles className="w-5 h-5 text-accent" strokeWidth={2.5} />
+        </div>
       </header>
 
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
         <div ref={mountRef} className="flex-1 min-h-[55vh] md:min-h-0" />
 
-        <aside className="md:w-80 p-4 border-t md:border-t-0 md:border-l border-white/5 overflow-y-auto space-y-5 bg-zinc-950/60 backdrop-blur">
-          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+        <aside className="md:w-80 p-5 overflow-y-auto space-y-6 bg-canvas" style={{ borderLeft: "1px solid #243240" }}>
+          <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted">
             Customização facial
           </p>
 
           {LAYER_ORDER.map((layer) => (
             <div key={layer}>
-              <p className="text-[11px] font-black uppercase tracking-wider text-zinc-300 mb-2">
+              <p className="font-display text-[11px] font-black uppercase tracking-widest text-white mb-3">
                 {LAYER_LABELS[layer]}
               </p>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-3">
                 {FACE_ASSETS[layer].map((_, i) => {
                   const active = selection[layer] === i;
                   return (
@@ -259,10 +261,10 @@ export default function Ido3DPage() {
                       onClick={() =>
                         setSelection((s) => ({ ...s, [layer]: i }))
                       }
-                      className={`h-12 rounded-xl border text-xs font-black transition ${
+                      className={`h-12 rounded-2xl font-display text-xs font-black transition ${
                         active
-                          ? "bg-white text-black border-white shadow-lg shadow-white/10"
-                          : "bg-white/5 text-zinc-400 border-white/10 hover:bg-white/10"
+                          ? "bg-accent text-canvas neo-glow-accent"
+                          : "neo-raised-xs text-text-secondary hover:text-accent"
                       }`}
                     >
                       {i + 1}
@@ -273,9 +275,9 @@ export default function Ido3DPage() {
             </div>
           ))}
 
-          <p className="text-[10px] text-zinc-600 leading-relaxed pt-2 border-t border-white/5">
+          <p className="text-[10px] text-text-muted leading-relaxed pt-4" style={{ borderTop: "1px solid #243240" }}>
             Arraste o personagem pra rotacionar. As variações de rosto puxam de{" "}
-            <code className="text-zinc-400">/public/assets/face/</code>; coloque
+            <code className="text-accent">/public/assets/face/</code>; coloque
             PNGs transparentes ({FACE_CANVAS_SIZE}×{FACE_CANVAS_SIZE}) nos nomes
             esperados pra substituir os placeholders.
           </p>

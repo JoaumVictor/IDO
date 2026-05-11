@@ -15,7 +15,7 @@ export function IDOAvatar({
 }: IDOAvatarProps) {
   return (
     <div
-      className={`rounded-full bg-black overflow-hidden inline-flex items-center justify-center shrink-0 ${className}`}
+      className={`rounded-full bg-surface-2 overflow-hidden inline-flex items-center justify-center shrink-0 ${className}`}
       style={{ width: size, height: size }}
     >
       <Image

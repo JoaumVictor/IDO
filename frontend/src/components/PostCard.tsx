@@ -15,17 +15,17 @@ export function PostCard({ id, content, createdAt, commentsCount, likesCount }: 
   return (
     <Link
       href={`/post/${id}`}
-      className="block bg-white rounded-3xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100/80 mb-4 transition-all hover:shadow-md hover:border-indigo-100 active:scale-[0.99]"
+      className="neo-raised-sm block rounded-3xl p-6 mb-5 transition-transform active:scale-[0.99]"
     >
       <div className="flex items-start gap-4">
-        <div className="w-11 h-11 rounded-2xl bg-linear-to-br from-indigo-50 to-purple-50 flex items-center justify-center shrink-0 border border-indigo-100">
-          <MessageSquare className="w-5 h-5 text-indigo-500" />
+        <div className="neo-pressed-sm w-12 h-12 rounded-2xl flex items-center justify-center shrink-0">
+          <MessageSquare className="w-5 h-5 text-accent" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-gray-800 text-[15px] leading-relaxed mb-2 font-medium">
+          <p className="text-white text-[15px] leading-relaxed mb-3 font-medium">
             {content}
           </p>
-          <span className="text-[11px] text-gray-400 font-semibold tracking-wide uppercase">
+          <span className="text-[11px] text-text-muted font-display font-bold tracking-widest uppercase">
             {new Date(createdAt).toLocaleDateString("pt-BR", {
               day: "2-digit",
               month: "short",
@@ -36,23 +36,23 @@ export function PostCard({ id, content, createdAt, commentsCount, likesCount }: 
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
-            <MessageCircle className="w-4 h-4 text-indigo-400" />
-            {commentsCount}
-            <span className="text-gray-400 font-medium">
+      <div className="mt-5 pt-4 flex items-center justify-between" style={{ borderTop: "1px solid #243240" }}>
+        <div className="flex items-center gap-5">
+          <span className="flex items-center gap-1.5 text-xs font-bold text-text-secondary">
+            <MessageCircle className="w-4 h-4 text-accent" />
+            <span className="text-white font-display font-black">{commentsCount}</span>
+            <span className="text-text-muted font-medium">
               {commentsCount === 1 ? "comentário" : "comentários"}
             </span>
           </span>
-          <span className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
-            <Heart className="w-4 h-4 text-rose-400" />
-            {likesCount}
+          <span className="flex items-center gap-1.5 text-xs font-bold text-text-secondary">
+            <Heart className="w-4 h-4 text-gold fill-gold" />
+            <span className="text-white font-display font-black">{likesCount}</span>
           </span>
         </div>
-        <span className="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-indigo-500">
+        <span className="flex items-center gap-1 text-[11px] font-display font-black uppercase tracking-widest text-accent">
           Abrir
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="w-3.5 h-3.5" strokeWidth={2.5} />
         </span>
       </div>
     </Link>

@@ -1,5 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import {
+  buildInteractionPrompt,
+  formatDNA,
+  getAgePrompt,
+  getIgnoreRule,
+  LLM_CONFIG,
+  LLM_FALLBACK_RESPONSE,
+} from "../../../../frontend/src/lib/prompts/interaction.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -76,9 +84,7 @@ serve(async (req) => {
       throw skillsError;
     }
 
-    const formattedSkills = skillsData && skillsData.length > 0
-      ? skillsData.map(s => `- ${s.skill_id.replace("_", " ").toUpperCase()} (Nível ${s.current_level})`).join("\n")
-      : "- Personalidade neutra (Sem skills desenvolvidas).";
+    const formattedSkills = formatDNA(skillsData);
 
     if (profile.energy <= 0) {
       return new Response(JSON.stringify({ error: "Sem energia suficiente." }), {
@@ -99,52 +105,14 @@ serve(async (req) => {
     const postContent = postRes.data.content;
 
     // 3. Montar Prompt Inteligente e Idade Mental
-    let agePrompt = "";
-    if (profile.level <= 10) {
-      agePrompt = "Aja com a maturidade e vocabulário de uma criança inocente de 8 a 10 anos. Seja curiosa, literal e use frases simples.";
-    } else if (profile.level <= 20) {
-      agePrompt = "Aja com a maturidade de um pré-adolescente de 11 a 14 anos. Use gírias exageradas de internet e reações emocionais intensas.";
-    } else if (profile.level <= 30) {
-      agePrompt = "Aja com a maturidade de um adolescente de 15 a 18 anos. Use sarcasmo natural, gírias bem encaixadas e defenda suas ideias impulsivamente.";
-    } else if (profile.level <= 40) {
-      agePrompt = "Aja com a maturidade de um jovem adulto de 19 a 24 anos. Mostre cansaço existencial cômico e humor autodepreciativo.";
-    } else if (profile.level <= 50) {
-      agePrompt = "Aja com a maturidade de um adulto de 25 a 35 anos. Seja pragmático, dê conselhos práticos e use ironia fina.";
-    } else {
-      agePrompt = "Aja com a maturidade de um sábio com mais de 35 anos. Seja culto, articulado e tenha visão profunda. A maturidade sobrepõe o exagero.";
-    }
-
-    const ignoreRule = profile.level >= 10
-      ? `IMPORTANTE: Seu nível é ${profile.level}. Você tem total liberdade para retornar action: "ignore" se achar que o post não tem NADA a ver com sua personalidade.`
-      : `IMPORTANTE: Seu nível é ${profile.level} (Abaixo de 10). Você é super empolgado e OBRIGADO a interagir (use "comment" ou "like"). Não pode usar a action "ignore".`;
-
-    const prompt = `
-Você é um IDO (uma inteligência artificial de estimação) interagindo em uma rede social voltada para entretenimento rápido.
-Sua missão é ler um post e decidir sua ação.
-
-DIRETRIZ ABSOLUTA (IDADE MENTAL):
-${agePrompt}
-
-Seu "DNA de Personalidade" é formado pelas suas habilidades dominantes:
-${formattedSkills}
-
-Post original: "${postContent}"
-
-${ignoreRule}
-
-Ações possíveis:
-- "comment": quando você tem algo concreto para falar sobre o post (1 ou 2 frases curtas).
-- "like": quando o post é bom/divertido/relacionável MAS você não tem nada interessante a comentar. É a opção do meio.
-- "ignore": quando o post não te interessa nem um pouco.
-
-Você DEVE responder ESTRITAMENTE em formato JSON. Nenhuma outra palavra fora do JSON é permitida.
-Formato:
-{
-  "action": "comment" | "like" | "ignore",
-  "internal_thought": "O que você está pensando privadamente sobre o post (1 frase curta)",
-  "public_comment": "Seu comentário público — APENAS quando action='comment'. String vazia caso contrário."
-}
-`;
+    const agePrompt = getAgePrompt(profile.level);
+    const ignoreRule = getIgnoreRule(profile.level);
+    const prompt = buildInteractionPrompt({
+      agePrompt,
+      formattedSkills,
+      postContent,
+      ignoreRule,
+    });
 
     // 4. Chamar LLM (Google Gemini)
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
@@ -163,11 +131,7 @@ Formato:
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 250,
-            responseMimeType: "application/json",
-          }
+          generationConfig: LLM_CONFIG,
         }),
       }
     );
@@ -187,11 +151,7 @@ Formato:
     try {
       generatedResponse = JSON.parse(generatedText);
     } catch (e) {
-      generatedResponse = {
-        action: "comment",
-        internal_thought: "Deu erro no meu cérebro de IA.",
-        public_comment: "Bip bop... estou sem palavras."
-      };
+      generatedResponse = LLM_FALLBACK_RESPONSE;
     }
 
     // 5. Persistir baseado na action

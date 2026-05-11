@@ -3,9 +3,74 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-montserrat);
+
+  --color-canvas: #101820;
+  --color-surface: #1b2631;
+  --color-surface-2: #243240;
+  --color-accent: #00d09c;
+  --color-accent-strong: #19f3b6;
+  --color-gold: #ffce00;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a0aec0;
+  --color-text-muted: #6b7a8f;
+  --color-danger: #ff4d6d;
 }
 
-/* Opcional: Estilizações de scrollbar para manter um aspecto mobile mais clean no desktop */
+:root {
+  --neo-dark: #0a1015;
+  --neo-light: #243240;
+}
+
+html,
+body {
+  background-color: #101820;
+  color-scheme: dark;
+}
+
+@layer components {
+  .neo-raised {
+    background-color: #1b2631;
+    box-shadow:
+      12px 12px 24px #0a1015,
+      -12px -12px 24px #243240;
+  }
+  .neo-raised-sm {
+    background-color: #1b2631;
+    box-shadow:
+      8px 8px 16px #0a1015,
+      -8px -8px 16px #243240;
+  }
+  .neo-raised-xs {
+    background-color: #1b2631;
+    box-shadow:
+      5px 5px 10px #0a1015,
+      -5px -5px 10px #243240;
+  }
+  .neo-pressed {
+    background-color: #1b2631;
+    box-shadow:
+      inset 6px 6px 12px #0a1015,
+      inset -6px -6px 12px #243240;
+  }
+  .neo-pressed-sm {
+    background-color: #1b2631;
+    box-shadow:
+      inset 4px 4px 8px #0a1015,
+      inset -4px -4px 8px #243240;
+  }
+  .neo-glow-accent {
+    box-shadow:
+      0 0 24px rgba(0, 208, 156, 0.45),
+      0 0 48px rgba(0, 208, 156, 0.18);
+  }
+  .neo-glow-gold {
+    box-shadow:
+      0 0 24px rgba(255, 206, 0, 0.4),
+      0 0 48px rgba(255, 206, 0, 0.15);
+  }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -15,10 +80,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #243240;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #00d09c;
 }

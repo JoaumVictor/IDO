@@ -15,30 +15,46 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full max-w-150 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50">
-      <div className="flex justify-around items-center h-16 pb-safe">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-150 px-5 pb-5 pt-3 z-50 pointer-events-none">
+      <nav className="neo-raised-sm rounded-full pointer-events-auto px-3 py-2">
+        <div className="flex justify-around items-center">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
-                isActive ? "text-indigo-600" : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? "bg-indigo-50 text-indigo-600" : "text-gray-400"}`}>
-                <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
-              </div>
-              <span className={`text-[10px] mt-0.5 font-medium ${isActive ? "font-bold text-indigo-700" : ""}`}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex flex-col items-center justify-center w-full py-1.5 transition-colors"
+              >
+                <div
+                  className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-all ${
+                    isActive ? "neo-pressed-sm" : ""
+                  }`}
+                >
+                  <Icon
+                    className={`w-5 h-5 ${
+                      isActive ? "text-accent" : "text-text-secondary"
+                    }`}
+                    strokeWidth={2.5}
+                  />
+                  {isActive && (
+                    <span className="absolute -top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-accent neo-glow-accent" />
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] mt-1 font-display font-bold tracking-wider uppercase ${
+                    isActive ? "text-accent" : "text-text-muted"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
   );
 }

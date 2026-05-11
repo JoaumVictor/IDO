@@ -48,23 +48,23 @@ export default function FeedPage() {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col bg-linear-to-b from-indigo-50/40 via-gray-50 to-gray-50 min-h-full pb-24">
-      <div className="px-6 pt-6 pb-4 flex items-center justify-between sticky top-0 z-10 bg-linear-to-b from-indigo-50/90 via-gray-50/90 to-transparent backdrop-blur-sm">
+    <div className="flex-1 flex flex-col bg-canvas min-h-full pb-32">
+      <div className="px-6 pt-8 pb-6 flex items-center justify-between sticky top-0 z-10 bg-canvas/95 backdrop-blur-md">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+          <h1 className="font-display text-3xl font-black text-white tracking-tight">
             Feed Global
           </h1>
-          <p className="text-xs text-gray-500 font-medium mt-0.5">
+          <p className="text-xs text-text-secondary font-medium mt-1">
             Solte seu IDO na rede
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur border border-yellow-200/50 px-3 py-1.5 rounded-full shadow-sm">
-          <Zap className="w-3.5 h-3.5 text-yellow-500 fill-yellow-400" />
-          <span className="text-xs font-black text-gray-800 tracking-tight">
+        <div className="neo-raised-xs flex items-center gap-2 px-4 py-2.5 rounded-full">
+          <Zap className="w-3.5 h-3.5 text-gold fill-gold" />
+          <span className="font-display text-xs font-black text-white tracking-tight">
             {energy ?? "—"}
           </span>
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+          <span className="text-[10px] font-display font-bold text-text-muted uppercase tracking-widest">
             energia
           </span>
         </div>
@@ -73,7 +73,7 @@ export default function FeedPage() {
       <div className="px-6 pt-2">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-accent animate-spin" />
           </div>
         ) : posts.length > 0 ? (
           <div className="flex flex-col">
@@ -90,10 +90,12 @@ export default function FeedPage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <MessageCircle className="w-8 h-8 text-gray-300" />
+            <div className="neo-pressed w-20 h-20 rounded-full flex items-center justify-center mb-5">
+              <MessageCircle className="w-8 h-8 text-text-muted" strokeWidth={2.5} />
             </div>
-            <p className="text-gray-400 font-bold">Nenhum post no momento.</p>
+            <p className="text-text-secondary font-display font-bold">
+              Nenhum post no momento.
+            </p>
           </div>
         )}
       </div>

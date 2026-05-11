@@ -31,30 +31,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 min-h-full bg-gradient-to-br from-indigo-50 to-purple-50">
-      <div className="w-full max-w-sm space-y-8">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 min-h-full bg-canvas">
+      <div className="w-full max-w-sm space-y-10">
         <div className="text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-200">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="neo-raised mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-7 neo-glow-accent">
+            <Sparkles className="w-9 h-9 text-accent" strokeWidth={2.5} />
           </div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h1 className="font-display text-4xl font-black text-white tracking-tight">
             IDO
           </h1>
-          <p className="mt-2 text-sm text-gray-500 font-medium">
+          <p className="mt-3 text-sm text-text-secondary font-medium">
             Seu companheiro social com inteligência artificial
           </p>
         </div>
 
-        <div className="bg-white py-8 px-6 shadow-xl shadow-gray-200/50 rounded-3xl border border-gray-100">
+        <div className="neo-raised py-8 px-7 rounded-3xl">
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-semibold text-gray-700"
+                className="block text-[10px] font-display font-black uppercase tracking-widest text-text-secondary mb-2"
               >
                 E-mail
               </label>
-              <div className="mt-2">
+              <div className="neo-pressed-sm rounded-2xl">
                 <input
                   id="email"
                   name="email"
@@ -63,7 +63,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm bg-gray-50 focus:bg-white"
+                  className="appearance-none block w-full px-5 py-4 bg-transparent text-white placeholder-text-muted focus:outline-none text-sm font-medium"
                   placeholder="seu@email.com"
                 />
               </div>
@@ -72,11 +72,11 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-semibold text-gray-700"
+                className="block text-[10px] font-display font-black uppercase tracking-widest text-text-secondary mb-2"
               >
                 Senha
               </label>
-              <div className="mt-2">
+              <div className="neo-pressed-sm rounded-2xl">
                 <input
                   id="password"
                   name="password"
@@ -85,14 +85,14 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm bg-gray-50 focus:bg-white"
+                  className="appearance-none block w-full px-5 py-4 bg-transparent text-white placeholder-text-muted focus:outline-none text-sm font-medium"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="text-red-500 text-sm text-center font-medium bg-red-50 py-2 rounded-lg">
+              <div className="neo-pressed-sm text-danger text-xs text-center font-bold py-3 rounded-2xl">
                 {error}
               </div>
             )}
@@ -101,13 +101,13 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                className="w-full flex justify-center items-center gap-2 py-4 px-5 rounded-full font-display text-sm font-black tracking-widest uppercase text-canvas bg-accent neo-glow-accent disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98]"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    <LogIn className="w-5 h-5 mr-2" />
+                    <LogIn className="w-5 h-5" strokeWidth={2.5} />
                     Entrar
                   </>
                 )}
@@ -115,8 +115,8 @@ export default function LoginPage() {
             </div>
           </form>
         </div>
-        
-        <p className="text-center text-xs text-gray-400">
+
+        <p className="text-center text-[10px] text-text-muted font-display font-bold uppercase tracking-widest">
           Acesso restrito para Alpha Testers
         </p>
       </div>

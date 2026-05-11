@@ -1,46 +1,11 @@
 import { SKILLS_CONFIG } from "@/config/skills_config";
-
-const T1: string[] = [
-  "Em modo {a} desde sempre ✨",
-  "Mood: bem {a} hoje",
-  "{a} de carteirinha 🎯",
-  "Sou tipo... {a}, e ponto",
-  "Vivendo o lado {a} da vida",
-  "Tô na vibe {a} 🌙",
-];
-
-const T2: string[] = [
-  "Sou mais {a}, mas com um toque de {b}",
-  "{a} de dia, {b} de noite 🌗",
-  "Mistura ambulante de {a} e {b}",
-  "{a} no coração, {b} na ponta da língua",
-  "Mood: {a} com pitadas de {b} ✨",
-  "Hoje tô {a}, ontem fui {b}, amanhã sei lá",
-];
-
-const T3: string[] = [
-  "Sou {a}, {b} e às vezes bem {c}",
-  "Vibe: {a}, {b} e {c} no mesmo balaio ✨",
-  "Tô tipo {a}, mas também {b}, e olha que sou {c}",
-  "{a} + {b} + {c} = eu 🌀",
-  "Mood diário: {a} no fundo, {b} na superfície, {c} nos picos",
-  "Sou um caos lindo de {a}, {b} e {c}",
-];
-
-const LEVEL_FLAVOR = (level: number) => {
-  if (level <= 10) return "🍼 ainda tô descobrindo o mundo";
-  if (level <= 20) return "📱 vivendo cada drama";
-  if (level <= 30) return "🎧 fase rebelde ativa";
-  if (level <= 40) return "☕ cansadinho mas firme";
-  if (level <= 50) return "🌿 começando a me entender";
-  return "🪐 já vi de tudo nessa vida";
-};
-
-const EMPTY_STATUSES: string[] = [
-  "Acabei de chegar, ainda descobrindo quem sou ✨",
-  "Página em branco esperando virar gente 📝",
-  "Sem personalidade definida ainda — me molde 🌱",
-];
+import {
+  EMPTY_STATUSES,
+  STATUS_T1,
+  STATUS_T2,
+  STATUS_T3,
+  getLevelFlavor,
+} from "../prompts/status-templates";
 
 function pick<T>(list: T[], seed: number): T {
   const i = Math.abs(seed) % list.length;
@@ -67,7 +32,6 @@ export function generateIdoStatus(
     .map(([id]) => SKILLS_CONFIG[id]?.name?.toLowerCase())
     .filter((n): n is string => Boolean(n));
 
-  // Seed estável: muda quando level/top skills mudam, mas é constante entre renders
   const seedSource = `${level}-${top.join("-")}`;
   const seed = hash(seedSource);
 
@@ -77,11 +41,11 @@ export function generateIdoStatus(
 
   let template: string;
   if (top.length === 1) {
-    template = pick(T1, seed);
+    template = pick(STATUS_T1, seed);
   } else if (top.length === 2) {
-    template = pick(T2, seed);
+    template = pick(STATUS_T2, seed);
   } else {
-    template = pick(T3, seed);
+    template = pick(STATUS_T3, seed);
   }
 
   const filled = template
@@ -89,5 +53,5 @@ export function generateIdoStatus(
     .replace("{b}", top[1] ?? "")
     .replace("{c}", top[2] ?? "");
 
-  return `${filled}\n${LEVEL_FLAVOR(level)}`;
+  return `${filled}\n${getLevelFlavor(level)}`;
 }

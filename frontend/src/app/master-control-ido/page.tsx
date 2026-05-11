@@ -110,18 +110,20 @@ export default function MasterControlPage() {
 
   if (access === "checking") {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-accent animate-spin" />
       </div>
     );
   }
 
   if (access === "denied") {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-8 text-center">
-        <ShieldAlert className="w-12 h-12 text-red-500 mb-4" />
-        <h1 className="text-xl font-black text-gray-100 tracking-tight">Acesso negado</h1>
-        <p className="text-sm text-gray-400 font-medium mt-2">
+      <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-8 text-center">
+        <ShieldAlert className="w-12 h-12 text-danger mb-4" />
+        <h1 className="font-display text-xl font-black text-white tracking-tight">
+          Acesso negado
+        </h1>
+        <p className="text-sm text-text-secondary font-medium mt-2">
           Esta área é restrita ao mestre do jogo.
         </p>
       </div>
@@ -129,15 +131,15 @@ export default function MasterControlPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-6 md:p-10">
-      <header className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-            <Crown className="w-6 h-6 text-gray-950" />
+    <div className="min-h-screen bg-canvas text-white p-6 md:p-10">
+      <header className="flex items-center justify-between mb-10">
+        <div className="flex items-center gap-4">
+          <div className="neo-raised-xs w-13 h-13 rounded-full flex items-center justify-center" style={{ width: 52, height: 52 }}>
+            <Crown className="w-6 h-6 text-gold" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight">God Panel</h1>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+            <h1 className="font-display text-2xl font-black tracking-tight">God Panel</h1>
+            <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted mt-0.5">
               IDO Master Control
             </p>
           </div>
@@ -145,35 +147,36 @@ export default function MasterControlPage() {
         <button
           onClick={loadProfiles}
           disabled={loadingList}
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800 text-xs font-bold uppercase tracking-wider hover:bg-gray-700 disabled:opacity-50"
+          className="neo-raised-xs flex items-center gap-2 px-5 py-3 rounded-full font-display text-xs font-black uppercase tracking-widest text-text-secondary hover:text-accent disabled:opacity-50 transition"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loadingList ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`w-3.5 h-3.5 ${loadingList ? "animate-spin" : ""}`}
+            strokeWidth={2.5}
+          />
           Recarregar
         </button>
       </header>
 
       {feedback && (
         <div
-          className={`mb-6 rounded-2xl px-4 py-3 text-xs font-bold border ${
-            feedback.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-              : "bg-red-500/10 border-red-500/30 text-red-300"
+          className={`neo-pressed-sm mb-7 rounded-2xl px-5 py-4 text-xs font-display font-black uppercase tracking-widest ${
+            feedback.type === "success" ? "text-accent" : "text-danger"
           }`}
         >
           {feedback.msg}
         </div>
       )}
 
-      <section className="bg-gradient-to-br from-red-900/40 to-red-950 border border-red-800/50 rounded-3xl p-6 mb-8">
+      <section className="neo-raised rounded-3xl p-7 mb-9">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
-            <Zap className="w-6 h-6 text-red-400 fill-red-400" />
+          <div className="neo-pressed-sm w-13 h-13 rounded-2xl flex items-center justify-center shrink-0" style={{ width: 52, height: 52 }}>
+            <Zap className="w-6 h-6 text-danger fill-danger" />
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-black text-red-100 tracking-tight">
+            <h2 className="font-display text-lg font-black text-white tracking-tight">
               Resetar Energia Global
             </h2>
-            <p className="text-sm text-red-200/70 font-medium mt-1">
+            <p className="text-sm text-text-secondary font-medium mt-1.5 leading-relaxed">
               Restaura a energia de TODOS os IDOs para 3. Use entre rounds de teste.
             </p>
           </div>
@@ -181,7 +184,12 @@ export default function MasterControlPage() {
         <button
           onClick={handleGlobalReset}
           disabled={resetting}
-          className="mt-5 w-full flex items-center justify-center gap-2 px-5 py-3 bg-red-500 text-white text-sm font-black tracking-wider uppercase rounded-2xl hover:bg-red-400 transition-all disabled:bg-red-900 disabled:cursor-not-allowed active:scale-[0.99] shadow-lg shadow-red-500/30"
+          className="mt-6 w-full flex items-center justify-center gap-2 px-5 py-4 bg-danger text-white font-display text-sm font-black tracking-widest uppercase rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
+          style={{
+            boxShadow: resetting
+              ? "none"
+              : "0 0 24px rgba(255,77,109,0.45), 0 0 48px rgba(255,77,109,0.18)",
+          }}
         >
           {resetting ? (
             <>
@@ -198,42 +206,45 @@ export default function MasterControlPage() {
       </section>
 
       <section>
-        <div className="flex items-center justify-between mb-3 px-1 gap-3">
-          <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 shrink-0">
+        <div className="flex items-center justify-between mb-5 px-1 gap-3">
+          <h2 className="font-display text-xs font-black uppercase tracking-widest text-text-secondary shrink-0">
             Testadores Alfa ({filtered.length})
           </h2>
           <div className="relative flex-1 max-w-xs">
-            <Search className="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search
+              className="w-3.5 h-3.5 text-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10"
+              strokeWidth={2.5}
+            />
             <input
               type="text"
               placeholder="Buscar por email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-800 rounded-full pl-8 pr-3 py-2 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 focus:bg-gray-900"
+              className="neo-pressed-sm w-full rounded-full pl-10 pr-4 py-3 text-xs text-white placeholder:text-text-muted focus:outline-none font-medium"
             />
           </div>
         </div>
 
-        <div className="bg-gray-900/60 border border-gray-800 rounded-3xl overflow-hidden">
+        <div className="neo-raised-sm rounded-3xl overflow-hidden">
           {loadingList ? (
             <div className="p-10 flex justify-center">
-              <Loader2 className="w-6 h-6 text-emerald-400 animate-spin" />
+              <Loader2 className="w-6 h-6 text-accent animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
-            <p className="p-10 text-center text-sm text-gray-500 font-bold">
+            <p className="p-10 text-center text-sm text-text-muted font-display font-bold">
               {search ? "Nenhum perfil bate com a busca." : "Nenhum perfil encontrado."}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-900 border-b border-gray-800">
-                  <tr className="text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
-                    <th className="px-5 py-3">Email</th>
-                    <th className="px-3 py-3">Nv</th>
-                    <th className="px-3 py-3">XP</th>
-                    <th className="px-3 py-3">⚡</th>
-                    <th className="px-3 py-3">Pts</th>
-                    <th className="px-3 py-3">Adm</th>
+                <thead>
+                  <tr className="text-left text-[10px] font-display font-black uppercase tracking-widest text-text-muted" style={{ borderBottom: "1px solid #243240" }}>
+                    <th className="px-5 py-4">Email</th>
+                    <th className="px-3 py-4">Nv</th>
+                    <th className="px-3 py-4">XP</th>
+                    <th className="px-3 py-4">⚡</th>
+                    <th className="px-3 py-4">Pts</th>
+                    <th className="px-3 py-4">Adm</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -241,34 +252,35 @@ export default function MasterControlPage() {
                     <tr
                       key={p.id}
                       onClick={() => setEditing(p)}
-                      className="border-b border-gray-800/60 last:border-0 hover:bg-gray-900/80 transition-colors cursor-pointer"
+                      className="last:border-0 transition-colors cursor-pointer hover:bg-surface-2/40"
+                      style={{ borderBottom: "1px solid #243240" }}
                     >
-                      <td className="px-5 py-4 font-medium text-gray-200 truncate max-w-65">
+                      <td className="px-5 py-4 font-medium text-white truncate max-w-65">
                         {p.email}
                       </td>
                       <td className="px-3 py-4">
-                        <span className="font-black text-indigo-300 bg-indigo-500/10 px-2.5 py-1 rounded-full text-xs">
+                        <span className="font-display font-black text-accent text-xs">
                           {p.level}
                         </span>
                       </td>
-                      <td className="px-3 py-4 font-bold text-gray-300">{p.xp}</td>
+                      <td className="px-3 py-4 font-bold text-text-secondary">{p.xp}</td>
                       <td className="px-3 py-4">
-                        <span className="inline-flex items-center gap-1.5 font-black text-yellow-300">
-                          <Zap className="w-3.5 h-3.5 fill-yellow-300" />
+                        <span className="inline-flex items-center gap-1.5 font-display font-black text-gold">
+                          <Zap className="w-3.5 h-3.5 fill-gold" />
                           {p.energy}
                         </span>
                       </td>
                       <td className="px-3 py-4">
-                        <span className="inline-flex items-center gap-1.5 font-black text-purple-300">
-                          <Sparkles className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 font-display font-black text-accent">
+                          <Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />
                           {p.points}
                         </span>
                       </td>
                       <td className="px-3 py-4">
                         {p.is_admin ? (
-                          <Crown className="w-4 h-4 text-amber-400" />
+                          <Crown className="w-4 h-4 text-gold" strokeWidth={2.5} />
                         ) : (
-                          <span className="text-gray-700">—</span>
+                          <span className="text-text-muted">—</span>
                         )}
                       </td>
                     </tr>
@@ -399,86 +411,86 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-3xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden"
+        className="neo-raised w-full max-w-md rounded-3xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-5 border-b border-gray-800 flex items-start justify-between gap-3">
+        <div className="p-6 flex items-start justify-between gap-3" style={{ borderBottom: "1px solid #243240" }}>
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+            <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted">
               Editar perfil
             </p>
-            <h2 className="text-base font-black text-white tracking-tight truncate mt-0.5">
+            <h2 className="font-display text-base font-black text-white tracking-tight truncate mt-1">
               {profile.email}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center text-gray-500 hover:text-white hover:bg-gray-800 shrink-0"
+            className="neo-raised-xs w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:text-accent shrink-0"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" strokeWidth={2.5} />
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <NumberField label="Nível" icon={<Award className="w-3.5 h-3.5" />} value={level} onChange={setLevel} />
-            <NumberField label="XP" icon={<Sparkles className="w-3.5 h-3.5" />} value={xp} onChange={setXp} />
+        <div className="p-6 space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <NumberField label="Nível" icon={<Award className="w-3.5 h-3.5" strokeWidth={2.5} />} value={level} onChange={setLevel} />
+            <NumberField label="XP" icon={<Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />} value={xp} onChange={setXp} />
             <NumberField label="Energia" icon={<Zap className="w-3.5 h-3.5 fill-current" />} value={energy} onChange={setEnergy} />
-            <NumberField label="Pontos" icon={<Sparkles className="w-3.5 h-3.5" />} value={points} onChange={setPoints} />
+            <NumberField label="Pontos" icon={<Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />} value={points} onChange={setPoints} />
           </div>
 
-          <label className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-2xl p-3 cursor-pointer">
-            <div className="flex items-center gap-2">
+          <label className="neo-pressed-sm flex items-center justify-between rounded-2xl p-4 cursor-pointer">
+            <div className="flex items-center gap-3">
               {isAdmin ? (
-                <ShieldCheck className="w-4 h-4 text-amber-400" />
+                <ShieldCheck className="w-4 h-4 text-gold" strokeWidth={2.5} />
               ) : (
-                <ShieldOff className="w-4 h-4 text-gray-500" />
+                <ShieldOff className="w-4 h-4 text-text-muted" strokeWidth={2.5} />
               )}
-              <span className="text-sm font-bold text-gray-200">Admin</span>
+              <span className="font-display text-sm font-black text-white">Admin</span>
             </div>
             <input
               type="checkbox"
               checked={isAdmin}
               onChange={(e) => setIsAdmin(e.target.checked)}
-              className="w-5 h-5 accent-amber-500"
+              className="w-5 h-5 accent-gold"
             />
           </label>
 
           <button
             onClick={handleSave}
             disabled={!dirty || busy !== null}
-            className="w-full flex items-center justify-center gap-2 h-11 rounded-2xl bg-emerald-500 text-emerald-950 text-sm font-black tracking-wider uppercase hover:bg-emerald-400 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed transition active:scale-[0.99]"
+            className="w-full flex items-center justify-center gap-2 h-12 rounded-full bg-accent text-canvas font-display text-sm font-black tracking-widest uppercase neo-glow-accent disabled:bg-surface-2 disabled:text-text-muted disabled:cursor-not-allowed disabled:shadow-none transition active:scale-[0.99]"
           >
             {busy === "save" ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <Save className="w-4 h-4" strokeWidth={2.5} />
                 Salvar alterações
               </>
             )}
           </button>
         </div>
 
-        <div className="px-5 pb-5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+        <div className="px-6 pb-6">
+          <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted mb-3">
             Zona de risco
           </p>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <button
               onClick={handleResetSkills}
               disabled={busy !== null}
-              className="w-full flex items-center justify-center gap-2 h-10 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-black tracking-wider uppercase hover:bg-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="neo-raised-xs w-full flex items-center justify-center gap-2 h-11 rounded-full text-gold font-display text-xs font-black tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {busy === "reset" ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.5} />
                   Resetar skills
                 </>
               )}
@@ -486,13 +498,13 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
             <button
               onClick={handleDelete}
               disabled={busy !== null}
-              className="w-full flex items-center justify-center gap-2 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-black tracking-wider uppercase hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="neo-raised-xs w-full flex items-center justify-center gap-2 h-11 rounded-full text-danger font-display text-xs font-black tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {busy === "delete" ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5" strokeWidth={2.5} />
                   Apagar perfil
                 </>
               )}
@@ -517,14 +529,14 @@ function NumberField({
 }) {
   return (
     <label className="block">
-      <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-1.5 mb-1.5">
+      <span className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted flex items-center gap-1.5 mb-2">
         {icon} {label}
       </span>
       <input
         type="number"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value || "0", 10))}
-        className="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-emerald-500/50"
+        className="neo-pressed-sm w-full rounded-2xl px-4 py-3 text-sm font-display font-black text-white focus:outline-none"
       />
     </label>
   );

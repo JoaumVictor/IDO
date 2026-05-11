@@ -97,14 +97,14 @@ export default function SkillsTreePage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-zinc-950 min-h-full">
-        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+      <div className="flex-1 flex items-center justify-center bg-canvas min-h-full">
+        <Loader2 className="w-8 h-8 text-accent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bottom-16 bg-zinc-950">
+    <div className="fixed inset-0 bottom-24 bg-canvas">
       <SkillTreeCanvas
         layout={layout}
         userSkills={userSkills}
@@ -112,32 +112,32 @@ export default function SkillsTreePage() {
         onSelect={(s) => setSelected(s)}
       />
 
-      <div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-3 z-10 pointer-events-none">
-        <div className="pointer-events-auto rounded-2xl bg-zinc-900/85 backdrop-blur border border-zinc-800 px-4 py-2.5 shadow-xl">
-          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 leading-none">
+      <div className="absolute top-5 left-5 right-5 flex items-start justify-between gap-3 z-10 pointer-events-none">
+        <div className="neo-raised-xs pointer-events-auto rounded-2xl px-5 py-3">
+          <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted leading-none">
             DNA Tree
           </p>
-          <p className="text-base font-black text-white tracking-tight mt-0.5">
+          <p className="font-display text-base font-black text-white tracking-tight mt-1">
             Rede Neural IDO
           </p>
         </div>
 
-        <div className="pointer-events-auto rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 border border-indigo-400/30 px-4 py-2.5 shadow-xl flex items-center gap-3">
-          <Sparkles className="w-5 h-5 text-white" />
+        <div className="neo-raised-xs pointer-events-auto rounded-2xl px-5 py-3 flex items-center gap-4">
+          <Sparkles className="w-5 h-5 text-accent" strokeWidth={2.5} />
           <div className="text-right leading-none">
-            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-200">
+            <p className="font-display text-[9px] font-black uppercase tracking-widest text-text-muted">
               Pontos
             </p>
-            <p className="text-2xl font-black text-white tracking-tight mt-0.5">
+            <p className="font-display text-2xl font-black text-accent tracking-tight mt-1">
               {profile?.points ?? 0}
             </p>
           </div>
-          <div className="h-8 w-px bg-white/20" />
+          <div className="h-8 w-px bg-surface-2" />
           <div className="text-left leading-none">
-            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-200">
+            <p className="font-display text-[9px] font-black uppercase tracking-widest text-text-muted">
               Level
             </p>
-            <p className="text-2xl font-black text-white tracking-tight mt-0.5">
+            <p className="font-display text-2xl font-black text-gold tracking-tight mt-1">
               {profile?.level ?? 1}
             </p>
           </div>

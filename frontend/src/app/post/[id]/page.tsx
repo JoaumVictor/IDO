@@ -104,7 +104,6 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       });
 
       if (error) {
-        // supabase-js engole o body em FunctionsHttpError; vamos extrair manualmente
         let detail = error.message || "Erro ao invocar a IA";
         const ctx: any = (error as any).context;
         if (ctx?.body) {
@@ -133,7 +132,6 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
 
       if (data?.success && data?.ai_response) {
         setThought(data.ai_response.internal_thought);
-        // Recarrega comentários / likes / energia
         await loadAll();
       }
     } catch (err: any) {
@@ -147,20 +145,20 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-screen bg-gray-50">
-        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+      <div className="flex-1 flex items-center justify-center min-h-screen bg-canvas">
+        <Loader2 className="w-8 h-8 text-accent animate-spin" />
       </div>
     );
   }
 
   if (notFound || !post) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6 text-center">
-        <AlertCircle className="w-12 h-12 text-gray-300 mb-4" />
-        <p className="text-gray-500 font-bold">Post não encontrado.</p>
+      <div className="flex-1 flex flex-col items-center justify-center min-h-screen bg-canvas p-6 text-center">
+        <AlertCircle className="w-12 h-12 text-text-muted mb-4" />
+        <p className="text-text-secondary font-display font-bold">Post não encontrado.</p>
         <Link
           href="/feed"
-          className="mt-4 px-5 py-2 bg-indigo-600 text-white text-sm font-bold rounded-full"
+          className="mt-5 px-6 py-3 bg-accent text-canvas font-display text-xs font-black tracking-widest uppercase rounded-full neo-glow-accent"
         >
           Voltar pro feed
         </Link>
@@ -171,39 +169,39 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const canInteract = (energy ?? 0) > 0 && !interacting;
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-linear-to-b from-indigo-50/40 via-gray-50 to-gray-50 pb-32">
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center gap-3">
+    <div className="flex-1 flex flex-col min-h-screen bg-canvas pb-40">
+      <header className="sticky top-0 z-10 bg-canvas/90 backdrop-blur-md px-5 py-4 flex items-center gap-3">
         <Link
           href="/feed"
-          className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-200 transition"
+          className="neo-raised-xs w-11 h-11 rounded-full flex items-center justify-center text-text-secondary hover:text-accent transition"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" strokeWidth={2.5} />
         </Link>
         <div className="flex-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none">
+          <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted leading-none">
             Publicação
           </p>
-          <p className="text-sm font-black text-gray-900 mt-0.5">
+          <p className="font-display text-sm font-black text-white mt-1">
             Reações dos IDOs
           </p>
         </div>
-        <div className="flex items-center gap-1.5 bg-white border border-yellow-200/50 px-3 py-1.5 rounded-full shadow-sm">
-          <Zap className="w-3.5 h-3.5 text-yellow-500 fill-yellow-400" />
-          <span className="text-xs font-black text-gray-800">{energy ?? "—"}</span>
+        <div className="neo-raised-xs flex items-center gap-2 px-4 py-2.5 rounded-full">
+          <Zap className="w-3.5 h-3.5 text-gold fill-gold" />
+          <span className="font-display text-xs font-black text-white">{energy ?? "—"}</span>
         </div>
       </header>
 
-      <div className="px-6 pt-6">
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+      <div className="px-6 pt-4">
+        <div className="neo-raised rounded-3xl p-7">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-indigo-50 to-purple-50 flex items-center justify-center shrink-0 border border-indigo-100">
-              <MessageSquare className="w-6 h-6 text-indigo-500" />
+            <div className="neo-pressed-sm w-13 h-13 rounded-2xl flex items-center justify-center shrink-0" style={{ width: 52, height: 52 }}>
+              <MessageSquare className="w-6 h-6 text-accent" strokeWidth={2.5} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-gray-900 text-[17px] leading-relaxed font-medium mb-2">
+              <p className="text-white text-[17px] leading-relaxed font-medium mb-3">
                 {post.content}
               </p>
-              <span className="text-[11px] text-gray-400 font-semibold tracking-wide uppercase">
+              <span className="font-display text-[11px] text-text-muted font-bold tracking-widest uppercase">
                 {new Date(post.created_at).toLocaleDateString("pt-BR", {
                   day: "2-digit",
                   month: "short",
@@ -214,18 +212,18 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          <div className="mt-5 pt-4 border-t border-gray-100 flex items-center gap-5">
-            <span className="flex items-center gap-1.5 text-sm font-bold text-gray-700">
-              <MessageCircle className="w-4 h-4 text-indigo-500" />
-              {comments.length}
-              <span className="text-gray-400 font-medium text-xs">
+          <div className="mt-6 pt-5 flex items-center gap-6" style={{ borderTop: "1px solid #243240" }}>
+            <span className="flex items-center gap-2 text-sm text-text-secondary">
+              <MessageCircle className="w-4 h-4 text-accent" strokeWidth={2.5} />
+              <span className="font-display font-black text-white">{comments.length}</span>
+              <span className="text-text-muted font-medium text-xs">
                 {comments.length === 1 ? "comentário" : "comentários"}
               </span>
             </span>
-            <span className="flex items-center gap-1.5 text-sm font-bold text-gray-700">
-              <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
-              {likes.length}
-              <span className="text-gray-400 font-medium text-xs">
+            <span className="flex items-center gap-2 text-sm text-text-secondary">
+              <Heart className="w-4 h-4 text-gold fill-gold" />
+              <span className="font-display font-black text-white">{likes.length}</span>
+              <span className="text-text-muted font-medium text-xs">
                 {likes.length === 1 ? "curtida" : "curtidas"}
               </span>
             </span>
@@ -233,35 +231,32 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
-      <div className="px-6 mt-6 flex-1">
-        <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3 px-1">
+      <div className="px-6 mt-8 flex-1">
+        <h2 className="font-display text-xs font-black uppercase tracking-widest text-text-secondary mb-4 px-1">
           Comentários dos IDOs
         </h2>
 
         {comments.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 border border-dashed border-gray-200 flex flex-col items-center text-center">
-            <MessageCircle className="w-8 h-8 text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500 font-bold">
+          <div className="neo-pressed-sm rounded-3xl p-10 flex flex-col items-center text-center">
+            <MessageCircle className="w-8 h-8 text-text-muted mb-3" strokeWidth={2.5} />
+            <p className="text-sm text-text-secondary font-display font-bold">
               Nenhum IDO comentou ainda.
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-text-muted mt-2">
               Seja o primeiro a soltar seu IDO aqui.
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {comments.map((c) => (
-              <div
-                key={c.id}
-                className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm"
-              >
-                <div className="flex items-center gap-2.5 mb-2">
-                  <IDOAvatar size={32} />
+              <div key={c.id} className="neo-raised-sm rounded-3xl p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <IDOAvatar size={36} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-gray-800 truncate">
+                    <p className="text-xs font-display font-bold text-white truncate">
                       {c.profiles?.email ?? "IDO anônimo"}
                     </p>
-                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
+                    <p className="font-display text-[10px] text-text-muted font-bold uppercase tracking-widest mt-0.5">
                       {new Date(c.created_at).toLocaleDateString("pt-BR", {
                         day: "2-digit",
                         month: "short",
@@ -271,8 +266,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                     </p>
                   </div>
                 </div>
-                <p className="text-[14px] text-gray-700 italic pl-1">
-                  "{c.response}"
+                <p className="text-[14px] text-text-secondary italic pl-1 leading-relaxed">
+                  &ldquo;{c.response}&rdquo;
                 </p>
               </div>
             ))}
@@ -280,16 +275,16 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
         )}
 
         {likes.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3 px-1 flex items-center gap-1.5">
-              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+          <div className="mt-10">
+            <h2 className="font-display text-xs font-black uppercase tracking-widest text-text-secondary mb-4 px-1 flex items-center gap-2">
+              <Heart className="w-3.5 h-3.5 text-gold fill-gold" />
               Curtidas
             </h2>
-            <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm flex flex-wrap gap-2">
+            <div className="neo-raised-sm rounded-3xl p-5 flex flex-wrap gap-2">
               {likes.map((l) => (
                 <span
                   key={l.ido_id}
-                  className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-full truncate max-w-45"
+                  className="neo-pressed-sm font-display text-[11px] font-black text-gold px-3 py-1.5 rounded-full truncate max-w-45"
                 >
                   {l.profiles?.email ?? "anônimo"}
                 </span>
@@ -300,9 +295,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
-        <div className="w-full max-w-150 px-4 pb-5 pt-3 bg-linear-to-t from-gray-50 via-gray-50/95 to-transparent pointer-events-auto">
+        <div className="w-full max-w-150 px-5 pb-6 pt-4 bg-gradient-to-t from-canvas via-canvas/95 to-transparent pointer-events-auto">
           {errorMsg && (
-            <div className="mb-3 px-3 py-2 bg-red-50 rounded-2xl flex items-center gap-2 text-red-600 text-xs font-bold border border-red-100">
+            <div className="neo-pressed-sm mb-3 px-4 py-3 rounded-2xl flex items-center gap-2 text-danger text-xs font-bold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <p>{errorMsg}</p>
             </div>
@@ -310,7 +305,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
           <button
             onClick={handleInteract}
             disabled={!canInteract}
-            className="w-full flex items-center justify-center gap-2 px-5 py-4 bg-gray-900 text-white text-sm font-black tracking-wider uppercase rounded-2xl hover:bg-gray-800 transition active:scale-[0.99] shadow-xl shadow-gray-900/30 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:shadow-none"
+            className="w-full flex items-center justify-center gap-2 px-5 py-4 bg-accent text-canvas font-display text-sm font-black tracking-widest uppercase rounded-full neo-glow-accent transition active:scale-[0.98] disabled:bg-surface-2 disabled:text-text-muted disabled:cursor-not-allowed disabled:shadow-none"
           >
             {interacting ? (
               <>
@@ -319,12 +314,12 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
               </>
             ) : (energy ?? 0) <= 0 ? (
               <>
-                <Zap className="w-5 h-5" />
+                <Zap className="w-5 h-5" strokeWidth={2.5} />
                 Sem energia
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5 text-yellow-300" />
+                <Sparkles className="w-5 h-5" strokeWidth={2.5} />
                 Interagir <span className="opacity-70 font-normal">(-1 ⚡)</span>
               </>
             )}

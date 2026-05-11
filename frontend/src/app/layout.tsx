@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -10,6 +10,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+  weight: ["600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -25,11 +31,10 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} antialiased`}
     >
-      <body className="min-h-screen bg-gray-950 flex flex-col items-center justify-center font-sans text-gray-900 overflow-x-hidden">
-        {/* Container limitador Mobile-First */}
-        <main className="w-full max-w-[600px] min-h-screen bg-gray-50 flex flex-col relative shadow-2xl overflow-y-auto overflow-x-hidden">
+      <body className="min-h-screen bg-canvas flex flex-col items-center justify-center font-sans text-white overflow-x-hidden">
+        <main className="w-full max-w-150 min-h-screen bg-canvas flex flex-col relative overflow-y-auto overflow-x-hidden">
           {children}
         </main>
       </body>
