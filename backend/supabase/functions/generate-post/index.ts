@@ -11,7 +11,6 @@ const corsHeaders = {
 const POST_LLM_CONFIG = {
   temperature: 0.95,
   maxOutputTokens: 220,
-  responseMimeType: "application/json",
 };
 
 const FALLBACK = {
