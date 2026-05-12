@@ -15,6 +15,10 @@ import {
   getSkillAttitude,
 } from "../../../../frontend/src/lib/prompts/skill-meta.ts";
 import { pickResponseMood } from "../../../../frontend/src/lib/prompts/response-mood.ts";
+import {
+  findMatchingTopics,
+  TOPIC_BY_ID,
+} from "../../../../frontend/src/lib/daily-events/topic-catalog.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -119,6 +123,40 @@ serve(async (req) => {
     const topSkillId = skillsData?.[0]?.skill_id;
     const skillAttitude = topSkillId ? getSkillAttitude(topSkillId) : null;
 
+    // 3.1. Camada dinâmica: conhecimento adquirido + gostos/desgostos do IDO
+    const [{ data: knowledgeRows }, { data: preferenceRows }] = await Promise.all([
+      supabaseClient
+        .from("ido_knowledge")
+        .select("topic_id")
+        .eq("user_id", user.id),
+      supabaseClient
+        .from("ido_preferences")
+        .select("topic_id, stance")
+        .eq("user_id", user.id),
+    ]);
+
+    const knownTopicIds = (knowledgeRows ?? []).map((r: { topic_id: string }) => r.topic_id);
+    const preferenceMap = new Map<string, "like" | "dislike">(
+      (preferenceRows ?? []).map((r: { topic_id: string; stance: "like" | "dislike" }) => [
+        r.topic_id,
+        r.stance,
+      ])
+    );
+
+    const matchedKnowledge = findMatchingTopics(postContent, knownTopicIds).map((t) => t.label);
+    const matchedPreferences = findMatchingTopics(
+      postContent,
+      Array.from(preferenceMap.keys())
+    )
+      .map((t) => {
+        const stance = preferenceMap.get(t.id);
+        return stance ? { topic: t.label, stance } : null;
+      })
+      .filter((x): x is { topic: string; stance: "like" | "dislike" } => Boolean(x));
+
+    // Keeps TOPIC_BY_ID warm for any future direct lookup; silences lint on Deno.
+    void TOPIC_BY_ID;
+
     // 4. Sortear formato da resposta (MICRO / CURTO / NORMAL / EXPANSIVO / JUST_LIKE)
     const moodChoice = pickResponseMood();
 
@@ -168,6 +206,8 @@ serve(async (req) => {
         skillAttitude,
         samples,
         responseMoodInstruction: moodChoice.instruction,
+        knowledgeBonus: matchedKnowledge,
+        preferenceBonus: matchedPreferences,
       });
 
       // 6. Chamar LLM (Google Gemini)

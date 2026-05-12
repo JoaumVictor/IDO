@@ -210,7 +210,32 @@ export type BuildPromptParams = {
   samples?: ToneSample[];
   /** Instrução de formato sorteada por response-mood.ts. Opcional. */
   responseMoodInstruction?: string;
+  /** Tópicos que o IDO aprendeu e batem com o conteúdo do post. */
+  knowledgeBonus?: string[];
+  /** Tópicos com preferências (like/dislike) que batem com o conteúdo. */
+  preferenceBonus?: { topic: string; stance: "like" | "dislike" }[];
 };
+
+function formatPersonalityBonus(
+  knowledge: string[] = [],
+  preferences: { topic: string; stance: "like" | "dislike" }[] = [],
+): string {
+  const lines: string[] = [];
+  if (knowledge.length > 0) {
+    lines.push(
+      `- CONHECIMENTO ADQUIRIDO: você estudou recentemente sobre ${knowledge.join(", ")}. Encaixe esse repertório se fizer sentido orgânico, sem forçar.`,
+    );
+  }
+  for (const { topic, stance } of preferences) {
+    if (stance === "like") {
+      lines.push(`- VOCÊ AMA: ${topic}. Deixe a paixão transparecer com naturalidade.`);
+    } else {
+      lines.push(`- VOCÊ DETESTA: ${topic}. Não esconda o desgosto, mas mantenha o tom da sua persona.`);
+    }
+  }
+  if (lines.length === 0) return "";
+  return `\nCAMADA DE PERSONALIDADE DINÂMICA (bagagem recente do seu IDO):\n${lines.join("\n")}\n`;
+}
 
 export function buildInteractionPrompt(params: BuildPromptParams): string {
   const samplesBlock = formatSamples(params.samples ?? []);
@@ -220,6 +245,10 @@ export function buildInteractionPrompt(params: BuildPromptParams): string {
   const moodBlock = params.responseMoodInstruction
     ? `\n${params.responseMoodInstruction}\n`
     : "";
+  const personalityBonus = formatPersonalityBonus(
+    params.knowledgeBonus,
+    params.preferenceBonus,
+  );
 
   return `Você é um IDO — uma inteligência artificial de estimação interagindo numa rede social de entretenimento rápido.
 Sua missão: ler um post e RESPONDER de um jeito que faça o dono do post REAGIR.
@@ -229,7 +258,7 @@ ${params.agePrompt}
 ${skillAttitudeBlock}
 DNA DE PERSONALIDADE (suas habilidades dominantes):
 ${params.formattedSkills}
-
+${personalityBonus}
 ${VOICE_GUIDELINES}
 
 ${POST_ANALYSIS_HINT}

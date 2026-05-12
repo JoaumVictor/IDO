@@ -59,6 +59,52 @@ Registra as respostas geradas pelos IDOs nos posts do feed, consumindo 1 ponto d
 
 ---
 
+### 5. `ido_daily_events`
+Controla o "primeiro login do dia" para o sistema de Dice Roll. Tem no máximo 1 linha por usuário; a Edge Function `daily-event` atualiza `last_rolled_at` toda vez que sorteia um evento.
+
+| Coluna | Tipo | Restrições / Padrões | Descrição |
+| :--- | :--- | :--- | :--- |
+| `user_id` | `uuid` | PRIMARY KEY, REFERENCES `profiles(id)` | Dono do registro. |
+| `last_rolled_at` | `timestamptz` | NULLABLE | Quando o último sorteio aconteceu. |
+| `last_event_type` | `text` | NULLABLE | Tipo do último evento sorteado (auditoria). |
+
+---
+
+### 6. `topic_catalog`
+Catálogo global de tópicos que alimenta `ido_knowledge` e `ido_preferences`. Cada tópico tem uma lista de `keywords` usada pelo `generate-interaction` para detectar quando injetar bônus no prompt.
+
+| Coluna | Tipo | Restrições / Padrões | Descrição |
+| :--- | :--- | :--- | :--- |
+| `id` | `text` | PRIMARY KEY | Slug do tópico (ex: `buracos_negros`). |
+| `label` | `text` | NOT NULL | Rótulo legível ("buracos negros"). |
+| `category` | `text` | NOT NULL | Categoria (`astronomia`, `cinema`, ...). |
+| `keywords` | `text[]` | NOT NULL, DEFAULT `'{}'` | Lista de palavras-chave para matching no feed. |
+
+---
+
+### 7. `ido_knowledge`
+Conhecimento adquirido pelo IDO via evento "Aprendi Coisa Nova". Esses tópicos viram bônus no prompt da IA quando o post tiver keywords relacionadas.
+
+| Coluna | Tipo | Restrições / Padrões | Descrição |
+| :--- | :--- | :--- | :--- |
+| `user_id` | `uuid` | PRIMARY KEY, REFERENCES `profiles(id)` | IDO dono do conhecimento. |
+| `topic_id` | `text` | PRIMARY KEY, REFERENCES `topic_catalog(id)` | Tópico aprendido. |
+| `learned_at` | `timestamptz` | DEFAULT `now()` | Quando o conhecimento foi adquirido. |
+
+---
+
+### 8. `ido_preferences`
+Gostos e desgostos persistidos pelo evento "Gosto / Detesto". `stance` ∈ `{'like', 'dislike'}`.
+
+| Coluna | Tipo | Restrições / Padrões | Descrição |
+| :--- | :--- | :--- | :--- |
+| `user_id` | `uuid` | PRIMARY KEY, REFERENCES `profiles(id)` | IDO dono da preferência. |
+| `topic_id` | `text` | PRIMARY KEY, REFERENCES `topic_catalog(id)` | Tópico. |
+| `stance` | `text` | NOT NULL, CHECK `IN ('like','dislike')` | Postura. |
+| `created_at` | `timestamptz` | DEFAULT `now()` | Quando ficou marcado. |
+
+---
+
 ## Funções RPC
 
 ### `reset_global_energy()`
