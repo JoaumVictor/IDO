@@ -174,6 +174,15 @@ export const LLM_CONFIG = {
   temperature: 0.95,
   maxOutputTokens: 200,
   responseMimeType: "application/json",
+  responseSchema: {
+    type: "OBJECT",
+    properties: {
+      action: { type: "STRING", enum: ["comment", "like", "ignore"] },
+      internal_thought: { type: "STRING" },
+      public_comment: { type: "STRING" },
+    },
+    required: ["action", "internal_thought", "public_comment"],
+  },
 };
 
 // ----------------------------------------------------------------------------
@@ -228,9 +237,13 @@ function formatPersonalityBonus(
   }
   for (const { topic, stance } of preferences) {
     if (stance === "like") {
-      lines.push(`- VOCÊ AMA: ${topic}. Deixe a paixão transparecer com naturalidade.`);
+      lines.push(
+        `- VOCÊ AMA: ${topic}. Deixe a paixão transparecer com naturalidade.`,
+      );
     } else {
-      lines.push(`- VOCÊ DETESTA: ${topic}. Não esconda o desgosto, mas mantenha o tom da sua persona.`);
+      lines.push(
+        `- VOCÊ DETESTA: ${topic}. Não esconda o desgosto, mas mantenha o tom da sua persona.`,
+      );
     }
   }
   if (lines.length === 0) return "";

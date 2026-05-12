@@ -6,7 +6,6 @@ import {
   getAgePrompt,
   getIgnoreRule,
   LLM_CONFIG,
-  LLM_FALLBACK_RESPONSE,
 } from "../_shared/prompts/interaction.ts";
 import { findRelevantSamples } from "../_shared/prompts/sample-finder.ts";
 import { PERSONALITY_SAMPLES } from "../_shared/prompts/personality-samples.ts";
@@ -239,7 +238,7 @@ serve(async (req) => {
       const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash";
 
       const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: {
@@ -255,23 +254,31 @@ serve(async (req) => {
       const geminiData = await geminiRes.json();
 
       if (!geminiRes.ok) {
-        if (geminiRes.status === 429) {
-          generatedResponse = LLM_FALLBACK_RESPONSE;
-        } else {
-          console.error("Gemini API Error:", JSON.stringify(geminiData));
-          throw new Error(
-            `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro desconhecido"}`,
-          );
-        }
+        console.error("Gemini API Error:", JSON.stringify(geminiData));
+        throw new Error(
+          `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro desconhecido"}`,
+        );
       }
 
-      // Extrair o texto
-      const generatedText =
-        geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "{}";
+      const rawText =
+        geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+      if (!rawText) {
+        console.error("Gemini retornou resposta vazia:", JSON.stringify(geminiData));
+        throw new Error("Gemini retornou resposta vazia");
+      }
+
+      // Gemini às vezes envolve o JSON em ```json ... ``` — limpa antes de parsear.
+      const cleanedText = rawText
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+
       try {
-        generatedResponse = JSON.parse(generatedText);
+        generatedResponse = JSON.parse(cleanedText);
       } catch (_e) {
-        generatedResponse = LLM_FALLBACK_RESPONSE;
+        console.error("JSON inválido do Gemini:", cleanedText);
+        throw new Error("Gemini devolveu JSON inválido");
       }
     }
 
