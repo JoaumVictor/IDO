@@ -89,15 +89,47 @@ serve(async (req) => {
     const user = userData.user;
     const adminClient = createClient(supabaseUrl, serviceKey);
 
+    // Admin override: força evento para outro usuário
+    let body: { force_user_id?: string } = {};
+    try {
+      const bodyText = await req.text();
+      if (bodyText) body = JSON.parse(bodyText);
+    } catch (_) {
+      /* ignore */
+    }
+
+    let targetUserId = user.id;
+    let isForced = false;
+
+    if (body.force_user_id && body.force_user_id !== user.id) {
+      const { data: callerProfile } = await adminClient
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+      if (!callerProfile?.is_admin) {
+        return new Response(
+          JSON.stringify({ error: "Apenas admins podem forçar eventos." }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      targetUserId = body.force_user_id;
+      isForced = true;
+    }
+
     // 1. Verifica se já rolou hoje
     const { data: dailyRow } = await adminClient
       .from("ido_daily_events")
       .select("last_rolled_at, last_event_type")
-      .eq("user_id", user.id)
+      .eq("user_id", targetUserId)
       .maybeSingle();
 
     const now = new Date();
     if (
+      !isForced &&
       dailyRow?.last_rolled_at &&
       isSameSaoPauloDay(new Date(dailyRow.last_rolled_at), now)
     ) {
@@ -117,14 +149,14 @@ serve(async (req) => {
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("level, energy")
-      .eq("id", user.id)
+      .eq("id", targetUserId)
       .single();
     if (profileError || !profile) throw new Error("Perfil não encontrado");
 
     const { data: skills } = await adminClient
       .from("ido_user_skills")
       .select("skill_id, current_level")
-      .eq("user_id", user.id)
+      .eq("user_id", targetUserId)
       .order("current_level", { ascending: false })
       .limit(5);
     const topSkillIds = (skills ?? []).map((s) => s.skill_id);
@@ -140,7 +172,7 @@ serve(async (req) => {
         .from("posts")
         .select("author_id, profiles!inner(id, email, level)")
         .gte("created_at", since)
-        .neq("author_id", user.id)
+        .neq("author_id", targetUserId)
         .limit(50);
 
       if (candidates && candidates.length > 0) {
@@ -178,7 +210,7 @@ serve(async (req) => {
       const { data: known } = await adminClient
         .from("ido_knowledge")
         .select("topic_id")
-        .eq("user_id", user.id);
+        .eq("user_id", targetUserId);
       const knownIds = new Set((known ?? []).map((k) => k.topic_id));
       const pool = (catalog ?? []).filter((t) => !knownIds.has(t.id));
       const picked =
@@ -186,7 +218,7 @@ serve(async (req) => {
       if (picked) {
         await adminClient
           .from("ido_knowledge")
-          .insert({ user_id: user.id, topic_id: picked.id });
+          .insert({ user_id: targetUserId, topic_id: picked.id });
         payload = {
           topic_id: picked.id,
           topic_label: picked.label,
@@ -205,7 +237,7 @@ serve(async (req) => {
       const { data: existing } = await adminClient
         .from("ido_preferences")
         .select("topic_id")
-        .eq("user_id", user.id);
+        .eq("user_id", targetUserId);
       const usedIds = new Set((existing ?? []).map((k) => k.topic_id));
       const pool = (catalog ?? []).filter((t) => !usedIds.has(t.id));
       const picked =
@@ -215,7 +247,7 @@ serve(async (req) => {
           Math.random() < 0.5 ? "like" : "dislike";
         await adminClient
           .from("ido_preferences")
-          .insert({ user_id: user.id, topic_id: picked.id, stance });
+          .insert({ user_id: targetUserId, topic_id: picked.id, stance });
         payload = {
           topic_id: picked.id,
           topic_label: picked.label,
@@ -234,7 +266,7 @@ serve(async (req) => {
       await adminClient
         .from("profiles")
         .update({ energy: newEnergy })
-        .eq("id", user.id);
+        .eq("id", targetUserId);
       payload = {
         delta: newEnergy - profile.energy,
         new_energy: newEnergy,
@@ -245,7 +277,7 @@ serve(async (req) => {
       await adminClient
         .from("profiles")
         .update({ energy: newEnergy })
-        .eq("id", user.id);
+        .eq("id", targetUserId);
       payload = {
         delta: newEnergy - profile.energy,
         new_energy: newEnergy,
@@ -254,16 +286,14 @@ serve(async (req) => {
     }
 
     // 4. Persiste o registro do dia
-    await adminClient
-      .from("ido_daily_events")
-      .upsert(
-        {
-          user_id: user.id,
-          last_rolled_at: now.toISOString(),
-          last_event_type: eventType,
-        },
-        { onConflict: "user_id" },
-      );
+    await adminClient.from("ido_daily_events").upsert(
+      {
+        user_id: targetUserId,
+        last_rolled_at: now.toISOString(),
+        last_event_type: eventType,
+      },
+      { onConflict: "user_id" },
+    );
 
     return new Response(
       JSON.stringify({ already_rolled: false, event_type: eventType, payload }),

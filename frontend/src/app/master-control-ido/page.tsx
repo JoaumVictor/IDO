@@ -18,6 +18,7 @@ import {
   Award,
   PenSquare,
   Send,
+  Dices,
 } from "lucide-react";
 
 interface AdminProfile {
@@ -37,7 +38,10 @@ export default function MasterControlPage() {
   const [profiles, setProfiles] = useState<AdminProfile[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [resetting, setResetting] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AdminProfile | null>(null);
   const [postContent, setPostContent] = useState("");
@@ -118,7 +122,7 @@ export default function MasterControlPage() {
   const handleGlobalReset = async () => {
     if (resetting) return;
     const confirmed = window.confirm(
-      "Tem certeza que quer RESETAR a energia de TODOS os perfis para 3?"
+      "Tem certeza que quer RESETAR a energia de TODOS os perfis para 3?",
     );
     if (!confirmed) return;
 
@@ -168,11 +172,16 @@ export default function MasterControlPage() {
     <div className="min-h-screen bg-canvas text-white p-6 md:p-10">
       <header className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-4">
-          <div className="neo-raised-xs w-13 h-13 rounded-full flex items-center justify-center" style={{ width: 52, height: 52 }}>
+          <div
+            className="neo-raised-xs w-13 h-13 rounded-full flex items-center justify-center"
+            style={{ width: 52, height: 52 }}
+          >
             <Crown className="w-6 h-6 text-gold" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-black tracking-tight">God Panel</h1>
+            <h1 className="font-display text-2xl font-black tracking-tight">
+              God Panel
+            </h1>
             <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted mt-0.5">
               IDO Master Control
             </p>
@@ -203,7 +212,10 @@ export default function MasterControlPage() {
 
       <section className="neo-raised rounded-3xl p-7 mb-9">
         <div className="flex items-start gap-4">
-          <div className="neo-pressed-sm w-13 h-13 rounded-2xl flex items-center justify-center shrink-0" style={{ width: 52, height: 52 }}>
+          <div
+            className="neo-pressed-sm w-13 h-13 rounded-2xl flex items-center justify-center shrink-0"
+            style={{ width: 52, height: 52 }}
+          >
             <Zap className="w-6 h-6 text-danger fill-danger" />
           </div>
           <div className="flex-1">
@@ -211,7 +223,8 @@ export default function MasterControlPage() {
               Resetar Energia Global
             </h2>
             <p className="text-sm text-text-secondary font-medium mt-1.5 leading-relaxed">
-              Restaura a energia de TODOS os IDOs para 3. Use entre rounds de teste.
+              Restaura a energia de TODOS os IDOs para 3. Use entre rounds de
+              teste.
             </p>
           </div>
         </div>
@@ -259,7 +272,9 @@ export default function MasterControlPage() {
 
         <textarea
           value={postContent}
-          onChange={(e) => setPostContent(e.target.value.slice(0, POST_MAX_CHARS))}
+          onChange={(e) =>
+            setPostContent(e.target.value.slice(0, POST_MAX_CHARS))
+          }
           placeholder="O que tá rolando..."
           rows={4}
           disabled={posting}
@@ -325,13 +340,18 @@ export default function MasterControlPage() {
             </div>
           ) : filtered.length === 0 ? (
             <p className="p-10 text-center text-sm text-text-muted font-display font-bold">
-              {search ? "Nenhum perfil bate com a busca." : "Nenhum perfil encontrado."}
+              {search
+                ? "Nenhum perfil bate com a busca."
+                : "Nenhum perfil encontrado."}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-[10px] font-display font-black uppercase tracking-widest text-text-muted" style={{ borderBottom: "1px solid #243240" }}>
+                  <tr
+                    className="text-left text-[10px] font-display font-black uppercase tracking-widest text-text-muted"
+                    style={{ borderBottom: "1px solid #243240" }}
+                  >
                     <th className="px-5 py-4">Email</th>
                     <th className="px-3 py-4">Nv</th>
                     <th className="px-3 py-4">XP</th>
@@ -356,7 +376,9 @@ export default function MasterControlPage() {
                           {p.level}
                         </span>
                       </td>
-                      <td className="px-3 py-4 font-bold text-text-secondary">{p.xp}</td>
+                      <td className="px-3 py-4 font-bold text-text-secondary">
+                        {p.xp}
+                      </td>
                       <td className="px-3 py-4">
                         <span className="inline-flex items-center gap-1.5 font-display font-black text-gold">
                           <Zap className="w-3.5 h-3.5 fill-gold" />
@@ -371,7 +393,10 @@ export default function MasterControlPage() {
                       </td>
                       <td className="px-3 py-4">
                         {p.is_admin ? (
-                          <Crown className="w-4 h-4 text-gold" strokeWidth={2.5} />
+                          <Crown
+                            className="w-4 h-4 text-gold"
+                            strokeWidth={2.5}
+                          />
                         ) : (
                           <span className="text-text-muted">—</span>
                         )}
@@ -415,6 +440,7 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
   const [points, setPoints] = useState(profile.points);
   const [isAdmin, setIsAdmin] = useState(profile.is_admin);
   const [busy, setBusy] = useState<null | string>(null);
+  const [forceEventResult, setForceEventResult] = useState<string | null>(null);
 
   const dirty =
     level !== profile.level ||
@@ -460,7 +486,7 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
 
   const handleResetSkills = async () => {
     const refund = window.confirm(
-      "OK = devolver os pontos gastos | Cancelar = só zerar sem devolver"
+      "OK = devolver os pontos gastos | Cancelar = só zerar sem devolver",
     );
     setBusy("reset");
     try {
@@ -472,7 +498,7 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
       await onSaved(
         refund
           ? `Skills zeradas. ${data ?? 0} pontos devolvidos.`
-          : `Skills zeradas (${data ?? 0} níveis apagados).`
+          : `Skills zeradas (${data ?? 0} níveis apagados).`,
       );
     } catch (e: any) {
       onError(e.message || "Falha ao resetar skills.");
@@ -481,10 +507,33 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
     }
   };
 
+  const handleForceEvent = async () => {
+    setBusy("force");
+    setForceEventResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("daily-event", {
+        body: { force_user_id: profile.id },
+      });
+      if (error) throw error;
+      if (data?.already_rolled) {
+        setForceEventResult(`Já rolou hoje — tipo: ${data.event_type}`);
+      } else {
+        setForceEventResult(
+          `Evento gerado: ${data?.event_type ?? "desconhecido"}`,
+        );
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Falha ao forçar evento.";
+      onError(msg);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const handleDelete = async () => {
     if (
       !window.confirm(
-        `APAGAR o perfil de ${profile.email}? Isso remove posts, interactions e skills. (auth.users segue existindo)`
+        `APAGAR o perfil de ${profile.email}? Isso remove posts, interactions e skills. (auth.users segue existindo)`,
       )
     )
       return;
@@ -511,7 +560,10 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
         className="neo-raised w-full max-w-md rounded-3xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 flex items-start justify-between gap-3" style={{ borderBottom: "1px solid #243240" }}>
+        <div
+          className="p-6 flex items-start justify-between gap-3"
+          style={{ borderBottom: "1px solid #243240" }}
+        >
           <div className="min-w-0">
             <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted">
               Editar perfil
@@ -530,10 +582,30 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
 
         <div className="p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
-            <NumberField label="Nível" icon={<Award className="w-3.5 h-3.5" strokeWidth={2.5} />} value={level} onChange={setLevel} />
-            <NumberField label="XP" icon={<Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />} value={xp} onChange={setXp} />
-            <NumberField label="Energia" icon={<Zap className="w-3.5 h-3.5 fill-current" />} value={energy} onChange={setEnergy} />
-            <NumberField label="Pontos" icon={<Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />} value={points} onChange={setPoints} />
+            <NumberField
+              label="Nível"
+              icon={<Award className="w-3.5 h-3.5" strokeWidth={2.5} />}
+              value={level}
+              onChange={setLevel}
+            />
+            <NumberField
+              label="XP"
+              icon={<Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />}
+              value={xp}
+              onChange={setXp}
+            />
+            <NumberField
+              label="Energia"
+              icon={<Zap className="w-3.5 h-3.5 fill-current" />}
+              value={energy}
+              onChange={setEnergy}
+            />
+            <NumberField
+              label="Pontos"
+              icon={<Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />}
+              value={points}
+              onChange={setPoints}
+            />
           </div>
 
           <label className="neo-pressed-sm flex items-center justify-between rounded-2xl p-4 cursor-pointer">
@@ -541,9 +613,14 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
               {isAdmin ? (
                 <ShieldCheck className="w-4 h-4 text-gold" strokeWidth={2.5} />
               ) : (
-                <ShieldOff className="w-4 h-4 text-text-muted" strokeWidth={2.5} />
+                <ShieldOff
+                  className="w-4 h-4 text-text-muted"
+                  strokeWidth={2.5}
+                />
               )}
-              <span className="font-display text-sm font-black text-white">Admin</span>
+              <span className="font-display text-sm font-black text-white">
+                Admin
+              </span>
             </div>
             <input
               type="checkbox"
@@ -574,6 +651,25 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
             Zona de risco
           </p>
           <div className="space-y-3">
+            <button
+              onClick={handleForceEvent}
+              disabled={busy !== null}
+              className="neo-raised-xs w-full flex items-center justify-center gap-2 h-11 rounded-full text-accent font-display text-xs font-black tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {busy === "force" ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Dices className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  Forçar Evento Diário
+                </>
+              )}
+            </button>
+            {forceEventResult && (
+              <p className="text-[10px] font-display font-black text-center text-accent uppercase tracking-widest">
+                {forceEventResult}
+              </p>
+            )}
             <button
               onClick={handleResetSkills}
               disabled={busy !== null}
