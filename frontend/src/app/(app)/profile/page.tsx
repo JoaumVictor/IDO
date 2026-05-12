@@ -77,6 +77,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-canvas min-h-full">
+        <DailyEventGate />
         <Loader2 className="w-8 h-8 text-accent animate-spin" />
       </div>
     );

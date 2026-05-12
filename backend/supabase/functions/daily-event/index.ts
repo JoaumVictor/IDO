@@ -126,7 +126,7 @@ serve(async (req) => {
     // 1. Verifica se já rolou hoje
     const { data: dailyRow } = await adminClient
       .from("ido_daily_events")
-      .select("last_rolled_at, last_event_type")
+      .select("last_rolled_at, last_event_type, payload")
       .eq("user_id", targetUserId)
       .maybeSingle();
 
@@ -140,7 +140,8 @@ serve(async (req) => {
         JSON.stringify({
           already_rolled: true,
           event_type: dailyRow.last_event_type,
-          payload: (dailyRow as any).payload ?? null,
+          payload: dailyRow.payload ?? null,
+          last_rolled_at: dailyRow.last_rolled_at,
         }),
         {
           status: 200,
@@ -301,7 +302,12 @@ serve(async (req) => {
     );
 
     return new Response(
-      JSON.stringify({ already_rolled: false, event_type: eventType, payload }),
+      JSON.stringify({
+        already_rolled: false,
+        event_type: eventType,
+        payload,
+        last_rolled_at: now.toISOString(),
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -18,45 +18,29 @@ interface UseDailyEventResult {
   dismiss: () => void;
 }
 
-/** Retorna a data de hoje no fuso de SP (GMT-3) no formato "YYYY-MM-DD". */
-function todaySP(): string {
-  return new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
-
 export function useDailyEvent(): UseDailyEventResult {
   const [event, setEvent] = useState<ActiveEvent | null>(null);
   const [loading, setLoading] = useState(true);
-  // Impede dupla chamada dentro do mesmo render cycle (StrictMode / hot-reload)
   const running = useRef(false);
 
-  console.log(event, loading);
+  console.log("useDailyEvent init", { event, loading });
 
   useEffect(() => {
     if (running.current) return;
-
     running.current = true;
 
     const run = async () => {
       try {
         const { data: sessionRes } = await supabase.auth.getSession();
-        const token = sessionRes.session?.access_token;
         const userId = sessionRes.session?.user?.id;
-        if (!token || !userId) {
+        if (!userId) {
           setLoading(false);
           return;
         }
 
-        // Chave inclui user_id + data SP — isolada por conta e por dia
-        const storageKey = `ido_daily_checked_${userId}_${todaySP()}`;
-        if (sessionStorage.getItem(storageKey)) {
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } =
-          await supabase.functions.invoke<DailyEventResponse>("daily-event", {
-            body: {},
-          });
+        const { data, error } = await supabase.functions.invoke<
+          DailyEventResponse & { last_rolled_at?: string }
+        >("daily-event", { body: {} });
 
         if (error) {
           console.error("daily-event invoke error", error);
@@ -64,16 +48,19 @@ export function useDailyEvent(): UseDailyEventResult {
           return;
         }
 
-        // Marca como verificado hoje para não re-disparar na mesma sessão
-        sessionStorage.setItem(storageKey, "1");
+        if (data?.event_type && data?.payload && data?.last_rolled_at) {
+          // Chave guarda o last_rolled_at do último evento já exibido para este usuário
+          const storageKey = `ido_daily_last_seen_${userId}`;
+          const lastSeen = sessionStorage.getItem(storageKey);
 
-        // Mostra o modal se tiver payload — independente de already_rolled
-        // (cobre o caso do admin ter forçado o evento antes do usuário abrir o app)
-        if (data && data.event_type && data.payload) {
-          setEvent({
-            event_type: data.event_type,
-            payload: data.payload,
-          });
+          if (data.last_rolled_at !== lastSeen) {
+            // Evento novo ou forçado pelo admin — exibe e registra
+            sessionStorage.setItem(storageKey, data.last_rolled_at);
+            setEvent({
+              event_type: data.event_type,
+              payload: data.payload,
+            });
+          }
         }
       } catch (err) {
         console.error("daily-event hook error", err);
