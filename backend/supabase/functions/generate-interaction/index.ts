@@ -8,6 +8,12 @@ import {
   LLM_CONFIG,
   LLM_FALLBACK_RESPONSE,
 } from "../../../../frontend/src/lib/prompts/interaction.ts";
+import { findRelevantSamples } from "../../../../frontend/src/lib/prompts/sample-finder.ts";
+import { PERSONALITY_SAMPLES } from "../../../../frontend/src/lib/prompts/personality-samples.ts";
+import {
+  getDominantCategory,
+  getSkillAttitude,
+} from "../../../../frontend/src/lib/prompts/skill-meta.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -104,14 +110,30 @@ serve(async (req) => {
 
     const postContent = postRes.data.content;
 
-    // 3. Montar Prompt Inteligente e Idade Mental
+    // 3. Montar Prompt Inteligente: idade mental + atitude da skill + few-shot
     const agePrompt = getAgePrompt(profile.level);
     const ignoreRule = getIgnoreRule(profile.level);
+
+    const dominantCategory = getDominantCategory(skillsData);
+    const topSkillId = skillsData?.[0]?.skill_id;
+    const skillAttitude = topSkillId ? getSkillAttitude(topSkillId) : null;
+
+    const samples = findRelevantSamples({
+      postContent,
+      idoLevel: profile.level,
+      dominantCategory,
+      idoSkillIds: skillsData?.map((s) => s.skill_id),
+      samples: PERSONALITY_SAMPLES,
+      limit: 3,
+    });
+
     const prompt = buildInteractionPrompt({
       agePrompt,
       formattedSkills,
       postContent,
       ignoreRule,
+      skillAttitude,
+      samples,
     });
 
     // 4. Chamar LLM (Google Gemini)
