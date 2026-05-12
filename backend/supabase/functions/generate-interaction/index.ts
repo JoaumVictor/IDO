@@ -255,10 +255,14 @@ serve(async (req) => {
       const geminiData = await geminiRes.json();
 
       if (!geminiRes.ok) {
-        console.error("Gemini API Error:", JSON.stringify(geminiData));
-        throw new Error(
-          `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro desconhecido"}`,
-        );
+        if (geminiRes.status === 429) {
+          generatedResponse = LLM_FALLBACK_RESPONSE;
+        } else {
+          console.error("Gemini API Error:", JSON.stringify(geminiData));
+          throw new Error(
+            `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro desconhecido"}`,
+          );
+        }
       }
 
       // Extrair o texto

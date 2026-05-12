@@ -32,12 +32,16 @@ interface DailyEventModalProps {
   onDismiss: () => void;
 }
 
-export function DailyEventModal({ eventType, payload, onDismiss }: DailyEventModalProps) {
+export function DailyEventModal({
+  eventType,
+  payload,
+  onDismiss,
+}: DailyEventModalProps) {
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-4 pb-6 pt-10 sm:pt-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-6"
       onClick={onDismiss}
     >
       <div
@@ -83,7 +87,7 @@ export function DailyEventModal({ eventType, payload, onDismiss }: DailyEventMod
 function renderBody(
   eventType: DailyEventType,
   payload: DailyEventModalProps["payload"],
-  onDismiss: () => void
+  onDismiss: () => void,
 ) {
   switch (eventType) {
     case "random_message":
@@ -97,7 +101,9 @@ function renderBody(
     case "low_energy":
       return <LowEnergyBody payload={payload as EnergyDeltaPayload} />;
     case "stalk":
-      return <StalkBody payload={payload as StalkPayload} onNavigate={onDismiss} />;
+      return (
+        <StalkBody payload={payload as StalkPayload} onNavigate={onDismiss} />
+      );
     case "post_suggestion":
       return (
         <PostSuggestionBody

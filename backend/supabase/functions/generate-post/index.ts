@@ -54,21 +54,26 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const theme = typeof body?.theme === "string" ? body.theme.trim() : "";
-    if (!theme) throw new Error("theme é obrigatório");
+    if (!theme) throw new Error("[generate-post] theme é obrigatório");
 
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
       .select("level")
       .eq("id", user.id)
       .single();
-    if (profileError || !profile) throw new Error("Perfil não encontrado");
+    if (profileError || !profile)
+      throw new Error(
+        `[generate-post] Perfil não encontrado: ${profileError?.message}`,
+      );
 
-    const { data: skills } = await supabaseClient
+    const { data: skills, error: skillsError } = await supabaseClient
       .from("ido_user_skills")
       .select("skill_id, current_level")
       .eq("user_id", user.id)
       .order("current_level", { ascending: false })
       .limit(5);
+    if (skillsError)
+      console.error("[generate-post] skills error:", skillsError.message);
 
     const agePrompt = getAgePrompt(profile.level);
     const formattedSkills = formatDNA(skills);
@@ -96,8 +101,10 @@ FORMATO DA RESPOSTA — JSON ESTRITO:
 { "content": "texto do post aqui, até 280 chars" }`;
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
+    if (!GEMINI_API_KEY)
+      throw new Error("[generate-post] GEMINI_API_KEY não configurada");
     const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash";
+    console.log("[generate-post] model:", GEMINI_MODEL, "theme:", theme);
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -113,8 +120,15 @@ FORMATO DA RESPOSTA — JSON ESTRITO:
 
     const geminiData = await geminiRes.json();
     if (!geminiRes.ok) {
+      if (geminiRes.status === 429) {
+        // Cota esgotada — retorna fallback silenciosamente
+        return new Response(JSON.stringify(FALLBACK), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       throw new Error(
-        `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro"}`,
+        `[generate-post] Gemini ${geminiRes.status}: ${geminiData?.error?.message ?? JSON.stringify(geminiData)}`,
       );
     }
 

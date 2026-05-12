@@ -12,7 +12,10 @@ interface PostSuggestionBodyProps {
 
 type Stage = "pick" | "generating" | "review" | "publishing";
 
-export function PostSuggestionBody({ payload, onPublished }: PostSuggestionBodyProps) {
+export function PostSuggestionBody({
+  payload,
+  onPublished,
+}: PostSuggestionBodyProps) {
   const [stage, setStage] = useState<Stage>("pick");
   const [chosenTheme, setChosenTheme] = useState<string | null>(null);
   const [draft, setDraft] = useState<string>("");
@@ -23,13 +26,19 @@ export function PostSuggestionBody({ payload, onPublished }: PostSuggestionBodyP
     setStage("generating");
     setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke<{ content: string }>(
-        "generate-post",
-        { body: { theme } }
-      );
-      if (error) throw error;
-      if (!data?.content) throw new Error("Resposta vazia");
-      setDraft(data.content);
+      const { data, error } = await supabase.functions.invoke<
+        { content: string } | { error: string }
+      >("generate-post", { body: { theme } });
+      if (error) {
+        // Tenta extrair mensagem real do corpo da resposta
+        const body = (error as any)?.context
+          ? await (error as any).context.json().catch(() => null)
+          : null;
+        throw new Error(body?.error ?? error.message ?? "Erro ao gerar");
+      }
+      const result = data as { content: string };
+      if (!result?.content) throw new Error("Resposta vazia");
+      setDraft(result.content);
       setStage("review");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao gerar";
@@ -78,9 +87,7 @@ export function PostSuggestionBody({ payload, onPublished }: PostSuggestionBodyP
             </button>
           ))}
         </div>
-        {error && (
-          <p className="text-xs text-danger font-medium">{error}</p>
-        )}
+        {error && <p className="text-xs text-danger font-medium">{error}</p>}
       </div>
     );
   }
@@ -102,7 +109,9 @@ export function PostSuggestionBody({ payload, onPublished }: PostSuggestionBodyP
         <span className="text-[10px] font-display font-bold text-text-muted uppercase tracking-widest">
           tema escolhido
         </span>
-        <p className="text-xs text-text-secondary font-medium mt-0.5">{chosenTheme}</p>
+        <p className="text-xs text-text-secondary font-medium mt-0.5">
+          {chosenTheme}
+        </p>
       </div>
       <textarea
         value={draft}
