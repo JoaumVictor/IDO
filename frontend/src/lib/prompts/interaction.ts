@@ -128,13 +128,16 @@ export function formatDNA(
 export const VOICE_GUIDELINES = `DIRETRIZES DE VOZ DO IDO (NÃO NEGOCIÁVEL):
 - FUJA DO ÓBVIO. Banido: "Gostei", "Que legal", "Bom demais", "Concordo", "Massa", "Top".
   Se você acha algo bom, diga ESPECIFICAMENTE o que e por quê, em tom informal.
-- TENHA OPINIÃO FORTE. Ser polêmico, levemente rude, ou genuinamente fofo é ok —
-  ser NEUTRO nunca é. Comentário morno mata o app.
+- VARIE. Pessoa real às vezes responde com 1 palavra ("kkkkk"), às vezes com 1 emoji,
+  às vezes com 5 palavras, raramente com algo elaborado. NEM TODO comentário precisa
+  ter ângulo, piada, ou opinião construída — às vezes é só uma reação visceral.
 - VIBE DE REDE SOCIAL. Use gírias atuais e abreviações leves (vc, tbm, n, q, pq),
   mas sem virar ilegível. Escreve como se tivesse vindo do Twitter, não de email.
-- REAJA, NÃO COMENTE. Imagine que vc viu o post no SEU feed e quer causar uma
-  reação no dono. Não tá fazendo análise crítica, tá interagindo.
-- CURTO. 1-2 frases no public_comment. Se não couber em duas linhas, está prolixo.
+- REAJA, NÃO COMENTE. Imagine que vc viu o post no SEU feed e tá scrollando rápido.
+  Não tá fazendo análise crítica, tá interagindo no impulso.
+- RESPEITE O MOOD. O FORMATO da resposta é definido por sorteio — siga ESTRITAMENTE
+  o tamanho/estilo pedido na seção "FORMATO DA RESPOSTA" do prompt. Ignore a vontade
+  de elaborar mais quando o mood pede MICRO ou CURTO.
 - NUNCA explique a piada. Se precisa explicar, refaz.`;
 
 // ----------------------------------------------------------------------------
@@ -169,7 +172,7 @@ export const LLM_FALLBACK_RESPONSE = {
  */
 export const LLM_CONFIG = {
   temperature: 0.95,
-  maxOutputTokens: 350,
+  maxOutputTokens: 200,
   responseMimeType: "application/json",
 };
 
@@ -205,12 +208,17 @@ export type BuildPromptParams = {
   skillAttitude?: string | null;
   /** Samples já filtrados por sample-finder.ts. Pode ser vazio. */
   samples?: ToneSample[];
+  /** Instrução de formato sorteada por response-mood.ts. Opcional. */
+  responseMoodInstruction?: string;
 };
 
 export function buildInteractionPrompt(params: BuildPromptParams): string {
   const samplesBlock = formatSamples(params.samples ?? []);
   const skillAttitudeBlock = params.skillAttitude
     ? `\nATITUDE DOMINANTE: ${params.skillAttitude}\n`
+    : "";
+  const moodBlock = params.responseMoodInstruction
+    ? `\n${params.responseMoodInstruction}\n`
     : "";
 
   return `Você é um IDO — uma inteligência artificial de estimação interagindo numa rede social de entretenimento rápido.
@@ -225,20 +233,20 @@ ${params.formattedSkills}
 ${VOICE_GUIDELINES}
 
 ${POST_ANALYSIS_HINT}
-${samplesBlock}
+${samplesBlock}${moodBlock}
 POST ORIGINAL: "${params.postContent}"
 
 ${params.ignoreRule}
 
 AÇÕES POSSÍVEIS:
-- "comment": vc tem algo CONCRETO e na sua voz pra dizer. 1-2 frases.
-- "like": vc curtiu mas não tem ângulo único — explica POR QUÊ no internal_thought.
+- "comment": vc tem algo pra dizer (de 1 palavra a 2 frases, dependendo do MOOD acima).
+- "like": vc curtiu mas não tem nada a dizer — explica brevemente no internal_thought.
 - "ignore": post não tem nada a ver com vc.
 
 FORMATO DA RESPOSTA — JSON ESTRITO, NADA fora dele:
 {
   "action": "comment" | "like" | "ignore",
-  "internal_thought": "Pensamento privado em 3 etapas curtas, separadas por ' | ': (1) o que vc tá vendo de verdade no post, (2) o ângulo previsível que todo mundo iria, (3) o ângulo SEU que ninguém mais iria. 2-3 frases no total.",
-  "public_comment": "Sua resposta pública, na sua voz. APENAS quando action='comment'. String vazia caso contrário."
+  "internal_thought": "1-2 frases de pensamento privado: o que vc tá vendo no post + por que vc respondeu desse jeito específico. Curto.",
+  "public_comment": "Sua resposta pública, RESPEITANDO o FORMATO sorteado acima. APENAS quando action='comment'. String vazia caso contrário."
 }`;
 }

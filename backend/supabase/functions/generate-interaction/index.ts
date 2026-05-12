@@ -14,6 +14,7 @@ import {
   getDominantCategory,
   getSkillAttitude,
 } from "../../../../frontend/src/lib/prompts/skill-meta.ts";
+import { pickResponseMood } from "../../../../frontend/src/lib/prompts/response-mood.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -118,62 +119,81 @@ serve(async (req) => {
     const topSkillId = skillsData?.[0]?.skill_id;
     const skillAttitude = topSkillId ? getSkillAttitude(topSkillId) : null;
 
-    const samples = findRelevantSamples({
-      postContent,
-      idoLevel: profile.level,
-      dominantCategory,
-      idoSkillIds: skillsData?.map((s) => s.skill_id),
-      samples: PERSONALITY_SAMPLES,
-      limit: 3,
-    });
+    // 4. Sortear formato da resposta (MICRO / CURTO / NORMAL / EXPANSIVO / JUST_LIKE)
+    const moodChoice = pickResponseMood();
 
-    const prompt = buildInteractionPrompt({
-      agePrompt,
-      formattedSkills,
-      postContent,
-      ignoreRule,
-      skillAttitude,
-      samples,
-    });
+    let generatedResponse: {
+      action: "comment" | "like" | "ignore";
+      internal_thought: string;
+      public_comment: string;
+    };
 
-    // 4. Chamar LLM (Google Gemini)
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-       throw new Error("GEMINI_API_KEY não configurada no Edge Function");
-    }
+    if (moodChoice.mood === "just_like") {
+      // Pula LLM — economia de tokens. IDO só curte e segue, igual scroll de feed real.
+      generatedResponse = {
+        action: "like",
+        internal_thought: "scrollei, curti, segui em frente",
+        public_comment: "",
+      };
+    } else {
+      // 5. Montar prompt completo: idade + skill attitude + DNA + samples + mood
+      const samples = findRelevantSamples({
+        postContent,
+        idoLevel: profile.level,
+        dominantCategory,
+        idoSkillIds: skillsData?.map((s) => s.skill_id),
+        samples: PERSONALITY_SAMPLES,
+        limit: 3,
+      });
 
-    const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash";
+      const prompt = buildInteractionPrompt({
+        agePrompt,
+        formattedSkills,
+        postContent,
+        ignoreRule,
+        skillAttitude,
+        samples,
+        responseMoodInstruction: moodChoice.instruction,
+      });
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: LLM_CONFIG,
-        }),
+      // 6. Chamar LLM (Google Gemini)
+      const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+      if (!GEMINI_API_KEY) {
+        throw new Error("GEMINI_API_KEY não configurada no Edge Function");
       }
-    );
 
-    const geminiData = await geminiRes.json();
+      const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash";
 
-    if (!geminiRes.ok) {
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: LLM_CONFIG,
+          }),
+        }
+      );
+
+      const geminiData = await geminiRes.json();
+
+      if (!geminiRes.ok) {
         console.error("Gemini API Error:", JSON.stringify(geminiData));
         throw new Error(
           `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro desconhecido"}`
         );
-    }
+      }
 
-    // Extrair o texto
-    const generatedText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "{}";
-    let generatedResponse;
-    try {
-      generatedResponse = JSON.parse(generatedText);
-    } catch (e) {
-      generatedResponse = LLM_FALLBACK_RESPONSE;
+      // Extrair o texto
+      const generatedText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "{}";
+      try {
+        generatedResponse = JSON.parse(generatedText);
+      } catch (_e) {
+        generatedResponse = LLM_FALLBACK_RESPONSE;
+      }
     }
 
     // 5. Persistir baseado na action

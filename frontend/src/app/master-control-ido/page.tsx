@@ -16,6 +16,8 @@ import {
   ShieldCheck,
   ShieldOff,
   Award,
+  PenSquare,
+  Send,
 } from "lucide-react";
 
 interface AdminProfile {
@@ -38,6 +40,10 @@ export default function MasterControlPage() {
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AdminProfile | null>(null);
+  const [postContent, setPostContent] = useState("");
+  const [posting, setPosting] = useState(false);
+
+  const POST_MAX_CHARS = 500;
 
   useEffect(() => {
     const verifyAdmin = async () => {
@@ -79,6 +85,34 @@ export default function MasterControlPage() {
   const flash = (type: "success" | "error", msg: string) => {
     setFeedback({ type, msg });
     setTimeout(() => setFeedback(null), 4000);
+  };
+
+  const handleCreatePost = async () => {
+    const trimmed = postContent.trim();
+    if (!trimmed || posting) return;
+
+    setPosting(true);
+    setFeedback(null);
+
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) {
+      flash("error", "Sessão expirada. Faça login de novo.");
+      setPosting(false);
+      return;
+    }
+
+    const { error } = await supabase.from("posts").insert({
+      content: trimmed,
+      author_id: authData.user.id,
+    });
+
+    if (error) {
+      flash("error", error.message || "Falha ao publicar.");
+    } else {
+      flash("success", "Post publicado no feed.");
+      setPostContent("");
+    }
+    setPosting(false);
   };
 
   const handleGlobalReset = async () => {
@@ -203,6 +237,65 @@ export default function MasterControlPage() {
             </>
           )}
         </button>
+      </section>
+
+      <section className="neo-raised rounded-3xl p-7 mb-9">
+        <div className="flex items-start gap-4 mb-6">
+          <div
+            className="neo-pressed-sm w-13 h-13 rounded-2xl flex items-center justify-center shrink-0"
+            style={{ width: 52, height: 52 }}
+          >
+            <PenSquare className="w-6 h-6 text-accent" strokeWidth={2.5} />
+          </div>
+          <div className="flex-1">
+            <h2 className="font-display text-lg font-black text-white tracking-tight">
+              Criar Publicação
+            </h2>
+            <p className="text-sm text-text-secondary font-medium mt-1.5 leading-relaxed">
+              Posta no feed global como você. Os IDOs vão começar a interagir.
+            </p>
+          </div>
+        </div>
+
+        <textarea
+          value={postContent}
+          onChange={(e) => setPostContent(e.target.value.slice(0, POST_MAX_CHARS))}
+          placeholder="O que tá rolando..."
+          rows={4}
+          disabled={posting}
+          className="neo-pressed-sm w-full rounded-2xl px-5 py-4 text-sm text-white placeholder:text-text-muted focus:outline-none font-medium resize-none disabled:opacity-50"
+        />
+
+        <div className="flex items-center justify-between mt-4 gap-3">
+          <span
+            className={`font-display text-xs font-black uppercase tracking-widest ${
+              postContent.length >= POST_MAX_CHARS
+                ? "text-danger"
+                : postContent.length > POST_MAX_CHARS * 0.9
+                  ? "text-gold"
+                  : "text-text-muted"
+            }`}
+          >
+            {postContent.length} / {POST_MAX_CHARS}
+          </span>
+          <button
+            onClick={handleCreatePost}
+            disabled={posting || !postContent.trim()}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-accent text-canvas font-display text-xs font-black tracking-widest uppercase rounded-full neo-glow-accent disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:cursor-not-allowed transition active:scale-[0.99]"
+          >
+            {posting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Publicando...
+              </>
+            ) : (
+              <>
+                <Send className="w-3.5 h-3.5" strokeWidth={2.5} />
+                Publicar
+              </>
+            )}
+          </button>
+        </div>
       </section>
 
       <section>

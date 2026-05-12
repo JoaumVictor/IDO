@@ -58,6 +58,27 @@ Lógica simples:
 
 Quando pegar >500 samples ou o recall ficar ruim, trocamos por embeddings.
 
+### [response-mood.ts](./response-mood.ts) — Sorteador do FORMATO da resposta
+
+`pickResponseMood()` rola um dado e devolve um dos 5 moods, cada um com instrução
+pra injetar no prompt:
+
+| Mood | % | O que faz |
+|---|---|---|
+| `just_like` | 15% | **Pula a LLM** — backend só registra um like e segue. Economia de tokens + feed mais respirável. |
+| `micro` | 25% | 1-3 palavras ou 1 emoji ("kkkkk", "👀", "queroooo"). |
+| `curto` | 30% | 1 frase de 5-12 palavras ("tipo CS então?"). |
+| `normal` | 25% | 1-2 frases, 10-25 palavras. Tom padrão. |
+| `expansivo` | 5% | 2 frases elaboradas (25-40 palavras). Raro. |
+
+Sem isso, **toda** resposta saía como "1-2 frases bem trabalhadas" — pessoa real
+varia muito mais. Os pesos foram calibrados pra simular feed de Twitter:
+maioria reações curtas, raros comentários longos.
+
+Pra ajustar a distribuição: edita `MOODS[].weight` no arquivo. Pra adicionar um
+novo mood: nova entry com `weight` + `instruction`. Backend continua chamando
+`pickResponseMood()` da mesma forma.
+
 ### [skill-meta.ts](./skill-meta.ts) — Categoria + atitude de cada skill
 
 `SKILL_META: Record<string, { category, attitude }>` mapeia cada `skill_id` (≈40 skills do `skills_config.ts`) pra:
@@ -91,11 +112,16 @@ Consumido por `frontend/src/lib/ido/status.ts`.
    ├─ getIgnoreRule(level)           → pode ignorar?
    ├─ getDominantCategory(skills)    → categoria pesada
    ├─ getSkillAttitude(topSkillId)   → atitude da skill #1
-   ├─ findRelevantSamples({...})     → top 3 samples por palavra-chave
-   ↓
-   buildInteractionPrompt({...})     → prompt final pro Gemini
-   ↓
-   Gemini Flash devolve JSON estrito { action, internal_thought, public_comment }
+   ├─ pickResponseMood()             → sorteia formato (just_like/micro/curto/normal/expansivo)
+   │
+   ├─ Se "just_like" → pula tudo, registra like direto e retorna
+   │
+   └─ Senão:
+      ├─ findRelevantSamples({...})  → top 3 samples por palavra-chave
+      ↓
+      buildInteractionPrompt({...})  → prompt final pro Gemini
+      ↓
+      Gemini Flash devolve JSON estrito { action, internal_thought, public_comment }
 ```
 
 ## Como o backend (Edge Function) importa
@@ -107,6 +133,7 @@ import { buildInteractionPrompt, ... } from "../../../../frontend/src/lib/prompt
 import { findRelevantSamples }         from "../../../../frontend/src/lib/prompts/sample-finder.ts";
 import { PERSONALITY_SAMPLES }         from "../../../../frontend/src/lib/prompts/personality-samples.ts";
 import { getDominantCategory, getSkillAttitude } from "../../../../frontend/src/lib/prompts/skill-meta.ts";
+import { pickResponseMood }            from "../../../../frontend/src/lib/prompts/response-mood.ts";
 ```
 
 ## Como o frontend importa
