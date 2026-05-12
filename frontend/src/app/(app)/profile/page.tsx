@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Loader2, Zap, Trophy, Box } from "lucide-react";
 import { IDOAvatar } from "@/components/IDOAvatar";
+import { IDOCommentsList } from "@/components/IDOCommentsList";
 import { generateIdoStatus } from "@/lib/ido/status";
 
 interface ProfileData {
@@ -16,6 +17,7 @@ interface ProfileData {
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [userSkills, setUserSkills] = useState<Record<string, number>>({});
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,6 +27,7 @@ export default function ProfilePage() {
         setLoading(false);
         return;
       }
+      setUserId(authData.user.id);
 
       const [profileRes, skillsRes] = await Promise.all([
         supabase
@@ -153,6 +156,14 @@ export default function ProfilePage() {
           Próximo nível: {(profile?.level ?? 1) * 10} XP
         </p>
       </div>
+
+      {userId && (
+        <IDOCommentsList
+          userId={userId}
+          title="Meus comentários"
+          emptyMessage="Você ainda não interagiu com nenhum post. Cai no feed e solta seu IDO."
+        />
+      )}
     </div>
   );
 }

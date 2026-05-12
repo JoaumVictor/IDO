@@ -10,10 +10,13 @@ import {
   ArrowLeft,
   MessageSquare,
   Heart,
+  ThumbsDown,
+  Share2,
   MessageCircle,
   Sparkles,
   Zap,
   AlertCircle,
+  Check,
 } from "lucide-react";
 
 interface PostData {
@@ -30,7 +33,7 @@ interface Comment {
   profiles: { email: string } | null;
 }
 
-interface LikeRow {
+interface ReactionRow {
   ido_id: string;
   profiles: { email: string } | null;
 }
@@ -40,7 +43,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
 
   const [post, setPost] = useState<PostData | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [likes, setLikes] = useState<LikeRow[]>([]);
+  const [likes, setLikes] = useState<ReactionRow[]>([]);
+  const [dislikes, setDislikes] = useState<ReactionRow[]>([]);
+  const [shares, setShares] = useState<ReactionRow[]>([]);
   const [energy, setEnergy] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -49,21 +54,31 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const [modalOpen, setModalOpen] = useState(false);
   const [thought, setThought] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
 
   const loadAll = useCallback(async () => {
-    const [postRes, commentsRes, likesRes, authData] = await Promise.all([
-      supabase.from("posts").select("*").eq("id", postId).maybeSingle(),
-      supabase
-        .from("interactions")
-        .select("id, response, created_at, ido_id, profiles(email)")
-        .eq("post_id", postId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("post_likes")
-        .select("ido_id, profiles(email)")
-        .eq("post_id", postId),
-      supabase.auth.getUser(),
-    ]);
+    const [postRes, commentsRes, likesRes, dislikesRes, sharesRes, authData] =
+      await Promise.all([
+        supabase.from("posts").select("*").eq("id", postId).maybeSingle(),
+        supabase
+          .from("interactions")
+          .select("id, response, created_at, ido_id, profiles(email)")
+          .eq("post_id", postId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("post_likes")
+          .select("ido_id, profiles(email)")
+          .eq("post_id", postId),
+        supabase
+          .from("post_dislikes")
+          .select("ido_id, profiles(email)")
+          .eq("post_id", postId),
+        supabase
+          .from("post_shares")
+          .select("ido_id, profiles(email)")
+          .eq("post_id", postId),
+        supabase.auth.getUser(),
+      ]);
 
     if (!postRes.data) {
       setNotFound(true);
@@ -73,7 +88,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
 
     setPost(postRes.data as PostData);
     setComments((commentsRes.data ?? []) as unknown as Comment[]);
-    setLikes((likesRes.data ?? []) as unknown as LikeRow[]);
+    setLikes((likesRes.data ?? []) as unknown as ReactionRow[]);
+    setDislikes((dislikesRes.data ?? []) as unknown as ReactionRow[]);
+    setShares((sharesRes.data ?? []) as unknown as ReactionRow[]);
 
     if (authData.data.user) {
       const { data: profile } = await supabase
@@ -90,6 +107,17 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  const handleCopyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch (err) {
+      console.error("Falha ao copiar link:", err);
+      setErrorMsg("Não consegui copiar o link.");
+    }
+  };
 
   const handleInteract = async () => {
     if (interacting) return;
@@ -212,21 +240,44 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          <div className="mt-6 pt-5 flex items-center gap-6" style={{ borderTop: "1px solid #243240" }}>
-            <span className="flex items-center gap-2 text-sm text-text-secondary">
-              <MessageCircle className="w-4 h-4 text-accent" strokeWidth={2.5} />
-              <span className="font-display font-black text-white">{comments.length}</span>
-              <span className="text-text-muted font-medium text-xs">
-                {comments.length === 1 ? "comentário" : "comentários"}
-              </span>
-            </span>
-            <span className="flex items-center gap-2 text-sm text-text-secondary">
-              <Heart className="w-4 h-4 text-gold fill-gold" />
-              <span className="font-display font-black text-white">{likes.length}</span>
-              <span className="text-text-muted font-medium text-xs">
-                {likes.length === 1 ? "curtida" : "curtidas"}
-              </span>
-            </span>
+          <div
+            className="mt-6 pt-5 flex items-center justify-between gap-3 flex-wrap"
+            style={{ borderTop: "1px solid #243240" }}
+          >
+            <div className="flex items-center gap-5 flex-wrap">
+              <StatChip
+                icon={<MessageCircle className="w-4 h-4 text-accent" strokeWidth={2.5} />}
+                value={comments.length}
+              />
+              <StatChip
+                icon={<Heart className="w-4 h-4 text-gold fill-gold" />}
+                value={likes.length}
+              />
+              <StatChip
+                icon={<ThumbsDown className="w-4 h-4 text-danger" strokeWidth={2.5} />}
+                value={dislikes.length}
+              />
+              <StatChip
+                icon={<Share2 className="w-4 h-4 text-text-secondary" strokeWidth={2.5} />}
+                value={shares.length}
+              />
+            </div>
+            <button
+              onClick={handleCopyShareLink}
+              className="neo-raised-xs flex items-center gap-2 px-4 py-2 rounded-full font-display text-[10px] font-black uppercase tracking-widest text-text-secondary hover:text-accent transition shrink-0"
+            >
+              {shareCopied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-accent" strokeWidth={2.5} />
+                  Copiado
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  Copiar link
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -274,24 +325,24 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
 
-        {likes.length > 0 && (
-          <div className="mt-10">
-            <h2 className="font-display text-xs font-black uppercase tracking-widest text-text-secondary mb-4 px-1 flex items-center gap-2">
-              <Heart className="w-3.5 h-3.5 text-gold fill-gold" />
-              Curtidas
-            </h2>
-            <div className="neo-raised-sm rounded-3xl p-5 flex flex-wrap gap-2">
-              {likes.map((l) => (
-                <span
-                  key={l.ido_id}
-                  className="neo-pressed-sm font-display text-[11px] font-black text-gold px-3 py-1.5 rounded-full truncate max-w-45"
-                >
-                  {l.profiles?.email ?? "anônimo"}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+        <ReactionList
+          title="Curtidas"
+          icon={<Heart className="w-3.5 h-3.5 text-gold fill-gold" />}
+          chipColorClass="text-gold"
+          rows={likes}
+        />
+        <ReactionList
+          title="Não curtiram"
+          icon={<ThumbsDown className="w-3.5 h-3.5 text-danger" strokeWidth={2.5} />}
+          chipColorClass="text-danger"
+          rows={dislikes}
+        />
+        <ReactionList
+          title="Compartilharam"
+          icon={<Share2 className="w-3.5 h-3.5 text-text-secondary" strokeWidth={2.5} />}
+          chipColorClass="text-text-secondary"
+          rows={shares}
+        />
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
@@ -332,6 +383,47 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
         thought={thought}
         onClose={() => setModalOpen(false)}
       />
+    </div>
+  );
+}
+
+function StatChip({ icon, value }: { icon: React.ReactNode; value: number }) {
+  return (
+    <span className="flex items-center gap-2 text-sm">
+      {icon}
+      <span className="font-display font-black text-white">{value}</span>
+    </span>
+  );
+}
+
+function ReactionList({
+  title,
+  icon,
+  chipColorClass,
+  rows,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  chipColorClass: string;
+  rows: ReactionRow[];
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="mt-10">
+      <h2 className="font-display text-xs font-black uppercase tracking-widest text-text-secondary mb-4 px-1 flex items-center gap-2">
+        {icon}
+        {title}
+      </h2>
+      <div className="neo-raised-sm rounded-3xl p-5 flex flex-wrap gap-2">
+        {rows.map((r) => (
+          <span
+            key={r.ido_id}
+            className={`neo-pressed-sm font-display text-[11px] font-black ${chipColorClass} px-3 py-1.5 rounded-full truncate max-w-45`}
+          >
+            {r.profiles?.email ?? "anônimo"}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

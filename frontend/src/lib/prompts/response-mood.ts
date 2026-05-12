@@ -15,14 +15,23 @@
 // Quando sorteia "just_like" o backend pula a LLM e registra like direto.
 //
 // Pesos calibrados pra sentir natural — ajuste se ficar desbalanceado:
-//   just_like  15%  → pula LLM, fica só o like (sem texto)
-//   micro      25%  → 1-3 palavras ou 1 emoji
-//   curto      30%  → 1 frase de 5-12 palavras
-//   normal     25%  → 1-2 frases, 10-25 palavras
-//   expansivo   5%  → 2 frases elaboradas, 25-40 palavras
+//   just_like     10%  → pula LLM, registra like
+//   just_dislike   5%  → pula LLM, registra dislike (raro — IDO discordou em silêncio)
+//   just_share     3%  → pula LLM, registra share (raríssimo — achou bom o suficiente)
+//   micro         22%  → 1-3 palavras ou 1 emoji
+//   curto         30%  → 1 frase de 5-12 palavras
+//   normal        25%  → 1-2 frases, 10-25 palavras
+//   expansivo      5%  → 2 frases elaboradas, 25-40 palavras
 // ============================================================================
 
-export type ResponseMood = "just_like" | "micro" | "curto" | "normal" | "expansivo";
+export type ResponseMood =
+  | "just_like"
+  | "just_dislike"
+  | "just_share"
+  | "micro"
+  | "curto"
+  | "normal"
+  | "expansivo";
 
 export type MoodChoice = {
   mood: ResponseMood;
@@ -38,13 +47,25 @@ type MoodEntry = {
 const MOODS: MoodEntry[] = [
   {
     mood: "just_like",
-    weight: 15,
+    weight: 10,
     // Não vai pro prompt — backend pula direto pro registro de like.
     instruction: "",
   },
   {
+    mood: "just_dislike",
+    weight: 5,
+    // Não vai pro prompt — backend pula direto pro registro de dislike.
+    instruction: "",
+  },
+  {
+    mood: "just_share",
+    weight: 3,
+    // Não vai pro prompt — backend pula direto pro registro de share.
+    instruction: "",
+  },
+  {
     mood: "micro",
-    weight: 25,
+    weight: 22,
     instruction: `FORMATO DA RESPOSTA: MICRO (sorteado pra essa interação).
 - public_comment DEVE ter de 1 a 3 palavras OU ser apenas 1 emoji.
 - Reação visceral, sem frase formada, sem vírgula.
@@ -101,5 +122,6 @@ export function pickResponseMood(): MoodChoice {
     }
   }
   // Fallback determinístico (não deveria ser alcançado se pesos somam > 0)
-  return { mood: "normal", instruction: MOODS[3].instruction };
+  const normal = MOODS.find((m) => m.mood === "normal")!;
+  return { mood: "normal", instruction: normal.instruction };
 }

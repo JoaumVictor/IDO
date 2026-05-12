@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { IDOAvatar } from "@/components/IDOAvatar";
+import { IDOCommentsList } from "@/components/IDOCommentsList";
 import { useParams } from "next/navigation";
 
 interface ProfileData {
@@ -124,6 +125,8 @@ export default function PublicProfilePage() {
           Energia e XP são privados
         </span>
       </div>
+
+      <IDOCommentsList userId={profile.id} />
     </div>
   );
 }

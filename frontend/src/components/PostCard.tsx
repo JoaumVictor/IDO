@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare, Heart, MessageCircle, ChevronRight } from "lucide-react";
+import {
+  MessageSquare,
+  Heart,
+  ThumbsDown,
+  Share2,
+  MessageCircle,
+  ChevronRight,
+} from "lucide-react";
 
 interface PostCardProps {
   id: string;
@@ -9,9 +16,19 @@ interface PostCardProps {
   createdAt: string;
   commentsCount: number;
   likesCount: number;
+  dislikesCount: number;
+  sharesCount: number;
 }
 
-export function PostCard({ id, content, createdAt, commentsCount, likesCount }: PostCardProps) {
+export function PostCard({
+  id,
+  content,
+  createdAt,
+  commentsCount,
+  likesCount,
+  dislikesCount,
+  sharesCount,
+}: PostCardProps) {
   return (
     <Link
       href={`/post/${id}`}
@@ -36,25 +53,42 @@ export function PostCard({ id, content, createdAt, commentsCount, likesCount }: 
         </div>
       </div>
 
-      <div className="mt-5 pt-4 flex items-center justify-between" style={{ borderTop: "1px solid #243240" }}>
-        <div className="flex items-center gap-5">
-          <span className="flex items-center gap-1.5 text-xs font-bold text-text-secondary">
-            <MessageCircle className="w-4 h-4 text-accent" />
-            <span className="text-white font-display font-black">{commentsCount}</span>
-            <span className="text-text-muted font-medium">
-              {commentsCount === 1 ? "comentário" : "comentários"}
-            </span>
-          </span>
-          <span className="flex items-center gap-1.5 text-xs font-bold text-text-secondary">
-            <Heart className="w-4 h-4 text-gold fill-gold" />
-            <span className="text-white font-display font-black">{likesCount}</span>
-          </span>
+      <div
+        className="mt-5 pt-4 flex items-center justify-between gap-3"
+        style={{ borderTop: "1px solid #243240" }}
+      >
+        <div className="flex items-center gap-4 flex-wrap">
+          <CounterChip
+            icon={<MessageCircle className="w-4 h-4 text-accent" strokeWidth={2.5} />}
+            value={commentsCount}
+          />
+          <CounterChip
+            icon={<Heart className="w-4 h-4 text-gold fill-gold" />}
+            value={likesCount}
+          />
+          <CounterChip
+            icon={<ThumbsDown className="w-4 h-4 text-danger" strokeWidth={2.5} />}
+            value={dislikesCount}
+          />
+          <CounterChip
+            icon={<Share2 className="w-4 h-4 text-text-secondary" strokeWidth={2.5} />}
+            value={sharesCount}
+          />
         </div>
-        <span className="flex items-center gap-1 text-[11px] font-display font-black uppercase tracking-widest text-accent">
+        <span className="flex items-center gap-1 text-[11px] font-display font-black uppercase tracking-widest text-accent shrink-0">
           Abrir
           <ChevronRight className="w-3.5 h-3.5" strokeWidth={2.5} />
         </span>
       </div>
     </Link>
+  );
+}
+
+function CounterChip({ icon, value }: { icon: React.ReactNode; value: number }) {
+  return (
+    <span className="flex items-center gap-1.5 text-xs">
+      {icon}
+      <span className="text-white font-display font-black">{value}</span>
+    </span>
   );
 }

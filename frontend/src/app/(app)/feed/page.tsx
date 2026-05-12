@@ -11,6 +11,8 @@ interface PostWithCounts {
   created_at: string;
   interactions: { count: number }[];
   post_likes: { count: number }[];
+  post_dislikes: { count: number }[];
+  post_shares: { count: number }[];
 }
 
 export default function FeedPage() {
@@ -23,7 +25,9 @@ export default function FeedPage() {
       const [postsRes, authData] = await Promise.all([
         supabase
           .from("posts")
-          .select("id, content, created_at, interactions(count), post_likes(count)")
+          .select(
+            "id, content, created_at, interactions(count), post_likes(count), post_dislikes(count), post_shares(count)"
+          )
           .order("created_at", { ascending: false }),
         supabase.auth.getUser(),
       ]);
@@ -85,6 +89,8 @@ export default function FeedPage() {
                 createdAt={post.created_at}
                 commentsCount={post.interactions?.[0]?.count ?? 0}
                 likesCount={post.post_likes?.[0]?.count ?? 0}
+                dislikesCount={post.post_dislikes?.[0]?.count ?? 0}
+                sharesCount={post.post_shares?.[0]?.count ?? 0}
               />
             ))}
           </div>

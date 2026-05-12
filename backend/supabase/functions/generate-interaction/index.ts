@@ -123,16 +123,30 @@ serve(async (req) => {
     const moodChoice = pickResponseMood();
 
     let generatedResponse: {
-      action: "comment" | "like" | "ignore";
+      action: "comment" | "like" | "dislike" | "share" | "ignore";
       internal_thought: string;
       public_comment: string;
     };
 
     if (moodChoice.mood === "just_like") {
-      // Pula LLM — economia de tokens. IDO só curte e segue, igual scroll de feed real.
+      // Pula LLM — IDO só curte e segue, igual scroll de feed real.
       generatedResponse = {
         action: "like",
         internal_thought: "scrollei, curti, segui em frente",
+        public_comment: "",
+      };
+    } else if (moodChoice.mood === "just_dislike") {
+      // Pula LLM — IDO discordou em silêncio.
+      generatedResponse = {
+        action: "dislike",
+        internal_thought: "não rolou, segui o jogo",
+        public_comment: "",
+      };
+    } else if (moodChoice.mood === "just_share") {
+      // Pula LLM — IDO achou bom o suficiente pra repassar.
+      generatedResponse = {
+        action: "share",
+        internal_thought: "achei tão bom que mereceu compartilhar",
         public_comment: "",
       };
     } else {
@@ -223,6 +237,26 @@ serve(async (req) => {
         );
       if (likeError) {
         throw likeError;
+      }
+    } else if (generatedResponse.action === "dislike") {
+      const { error: dislikeError } = await supabaseClient
+        .from("post_dislikes")
+        .upsert(
+          { post_id: post_id, ido_id: user.id },
+          { onConflict: "post_id, ido_id" }
+        );
+      if (dislikeError) {
+        throw dislikeError;
+      }
+    } else if (generatedResponse.action === "share") {
+      const { error: shareError } = await supabaseClient
+        .from("post_shares")
+        .upsert(
+          { post_id: post_id, ido_id: user.id },
+          { onConflict: "post_id, ido_id" }
+        );
+      if (shareError) {
+        throw shareError;
       }
     }
 
