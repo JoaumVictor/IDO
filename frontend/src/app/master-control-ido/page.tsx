@@ -441,6 +441,7 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
   const [isAdmin, setIsAdmin] = useState(profile.is_admin);
   const [busy, setBusy] = useState<null | string>(null);
   const [forceEventResult, setForceEventResult] = useState<string | null>(null);
+  const [forceEventType, setForceEventType] = useState<string>("");
 
   const dirty =
     level !== profile.level ||
@@ -511,8 +512,10 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
     setBusy("force");
     setForceEventResult(null);
     try {
+      const body: Record<string, string> = { force_user_id: profile.id };
+      if (forceEventType) body.force_event_type = forceEventType;
       const { data, error } = await supabase.functions.invoke("daily-event", {
-        body: { force_user_id: profile.id },
+        body,
       });
       if (error) throw error;
       if (data?.already_rolled) {
@@ -651,6 +654,25 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
             Zona de risco
           </p>
           <div className="space-y-3">
+            <div className="space-y-2">
+              <p className="font-display text-[10px] font-black uppercase tracking-widest text-text-muted">
+                Tipo de evento
+              </p>
+              <select
+                value={forceEventType}
+                onChange={(e) => setForceEventType(e.target.value)}
+                className="w-full h-10 rounded-xl bg-surface-2 text-white font-display text-xs font-black uppercase tracking-widest px-3 border-none outline-none"
+              >
+                <option value="">Aleatório</option>
+                <option value="random_message">Mensagem aleatória</option>
+                <option value="post_suggestion">Sugestão de post</option>
+                <option value="stalk">Stalk</option>
+                <option value="knowledge">Conhecimento</option>
+                <option value="preference">Preferência</option>
+                <option value="energy_bonus">Bônus de energia</option>
+                <option value="low_energy">Energia baixa</option>
+              </select>
+            </div>
             <button
               onClick={handleForceEvent}
               disabled={busy !== null}
@@ -661,7 +683,7 @@ function EditProfileModal({ profile, onClose, onSaved, onError }: EditProps) {
               ) : (
                 <>
                   <Dices className="w-3.5 h-3.5" strokeWidth={2.5} />
-                  Forçar Evento Diário
+                  Setar evento
                 </>
               )}
             </button>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Loader2, Zap, Trophy, Box } from "lucide-react";
 import { IDOAvatar } from "@/components/IDOAvatar";
 import { IDOCommentsList } from "@/components/IDOCommentsList";
+import { DailyEventGate } from "@/components/DailyEventGate";
 import { generateIdoStatus } from "@/lib/ido/status";
 
 interface ProfileData {
@@ -20,45 +21,57 @@ export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      if (!authData.user) {
-        setLoading(false);
-        return;
-      }
-      setUserId(authData.user.id);
-
-      const [profileRes, skillsRes] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("level, xp, energy")
-          .eq("id", authData.user.id)
-          .single(),
-        supabase
-          .from("ido_user_skills")
-          .select("skill_id, current_level")
-          .eq("user_id", authData.user.id),
-      ]);
-
-      if (profileRes.data) setProfile(profileRes.data);
-      if (skillsRes.data) {
-        const map: Record<string, number> = {};
-        skillsRes.data.forEach((s) => {
-          map[s.skill_id] = s.current_level;
-        });
-        setUserSkills(map);
-      }
-
+  const fetchProfileData = useCallback(async () => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) {
       setLoading(false);
-    };
+      return;
+    }
+    setUserId(authData.user.id);
 
-    fetchProfileData();
+    const [profileRes, skillsRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("level, xp, energy")
+        .eq("id", authData.user.id)
+        .single(),
+      supabase
+        .from("ido_user_skills")
+        .select("skill_id, current_level")
+        .eq("user_id", authData.user.id),
+    ]);
+
+    if (profileRes.data) setProfile(profileRes.data);
+    if (skillsRes.data) {
+      const map: Record<string, number> = {};
+      skillsRes.data.forEach((s) => {
+        map[s.skill_id] = s.current_level;
+      });
+      setUserSkills(map);
+    }
+
+    setLoading(false);
   }, []);
+
+  // Carrega na montagem
+  useEffect(() => {
+    fetchProfileData();
+  }, [fetchProfileData]);
+
+  // Recarrega quando o usuário volta para a aba/janela
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        fetchProfileData();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [fetchProfileData]);
 
   const status = useMemo(
     () => generateIdoStatus(userSkills, profile?.level ?? 1),
-    [userSkills, profile?.level]
+    [userSkills, profile?.level],
   );
 
   if (loading) {
@@ -71,6 +84,7 @@ export default function ProfilePage() {
 
   return (
     <div className="p-6 flex-1 flex flex-col bg-canvas min-h-full pb-32">
+      <DailyEventGate />
       <div className="mb-8">
         <h1 className="font-display text-3xl font-black text-white tracking-tight">
           Meu IDO
@@ -147,7 +161,7 @@ export default function ProfilePage() {
                 (((profile?.xp ?? 0) % ((profile?.level ?? 1) * 10)) /
                   ((profile?.level ?? 1) * 10)) *
                   100,
-                100
+                100,
               )}%`,
             }}
           />

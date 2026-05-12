@@ -90,7 +90,8 @@ serve(async (req) => {
     const adminClient = createClient(supabaseUrl, serviceKey);
 
     // Admin override: força evento para outro usuário
-    let body: { force_user_id?: string } = {};
+    let body: { force_user_id?: string; force_event_type?: DailyEventType } =
+      {};
     try {
       const bodyText = await req.text();
       if (bodyText) body = JSON.parse(bodyText);
@@ -100,6 +101,7 @@ serve(async (req) => {
 
     let targetUserId = user.id;
     let isForced = false;
+    let forcedEventType: DailyEventType | null = null;
 
     if (body.force_user_id && body.force_user_id !== user.id) {
       const { data: callerProfile } = await adminClient
@@ -118,6 +120,7 @@ serve(async (req) => {
       }
       targetUserId = body.force_user_id;
       isForced = true;
+      if (body.force_event_type) forcedEventType = body.force_event_type;
     }
 
     // 1. Verifica se já rolou hoje
@@ -137,6 +140,7 @@ serve(async (req) => {
         JSON.stringify({
           already_rolled: true,
           event_type: dailyRow.last_event_type,
+          payload: (dailyRow as any).payload ?? null,
         }),
         {
           status: 200,
@@ -161,8 +165,8 @@ serve(async (req) => {
       .limit(5);
     const topSkillIds = (skills ?? []).map((s) => s.skill_id);
 
-    // 3. Sorteio
-    let eventType = rollEvent();
+    // 3. Sorteio (ou tipo forçado pelo admin)
+    let eventType = forcedEventType ?? rollEvent();
     let payload: Record<string, unknown> = {};
     const seed = Date.now() ^ Math.floor(Math.random() * 1_000_000);
 
@@ -285,12 +289,13 @@ serve(async (req) => {
       };
     }
 
-    // 4. Persiste o registro do dia
+    // 4. Persiste o registro do dia (inclui payload para recuperação futura)
     await adminClient.from("ido_daily_events").upsert(
       {
         user_id: targetUserId,
         last_rolled_at: now.toISOString(),
         last_event_type: eventType,
+        payload,
       },
       { onConflict: "user_id" },
     );
