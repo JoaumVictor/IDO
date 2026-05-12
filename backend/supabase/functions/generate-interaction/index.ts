@@ -260,12 +260,20 @@ serve(async (req) => {
         );
       }
 
-      const rawText =
-        geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      const candidate = geminiData?.candidates?.[0];
+      const finishReason = candidate?.finishReason;
+      const rawText = candidate?.content?.parts?.[0]?.text?.trim();
 
       if (!rawText) {
-        console.error("Gemini retornou resposta vazia:", JSON.stringify(geminiData));
-        throw new Error("Gemini retornou resposta vazia");
+        console.error(
+          "Gemini sem texto. finishReason=",
+          finishReason,
+          "payload=",
+          JSON.stringify(geminiData),
+        );
+        throw new Error(
+          `Gemini retornou resposta vazia (finishReason=${finishReason ?? "desconhecido"})`,
+        );
       }
 
       // Gemini às vezes envolve o JSON em ```json ... ``` — limpa antes de parsear.
@@ -277,8 +285,16 @@ serve(async (req) => {
       try {
         generatedResponse = JSON.parse(cleanedText);
       } catch (_e) {
-        console.error("JSON inválido do Gemini:", cleanedText);
-        throw new Error("Gemini devolveu JSON inválido");
+        console.error(
+          "JSON inválido do Gemini. finishReason=",
+          finishReason,
+          "rawText=",
+          rawText,
+        );
+        const preview = rawText.slice(0, 200).replace(/\s+/g, " ");
+        throw new Error(
+          `Gemini devolveu JSON inválido (finishReason=${finishReason ?? "desconhecido"}): ${preview}`,
+        );
       }
     }
 

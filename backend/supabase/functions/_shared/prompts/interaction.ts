@@ -172,7 +172,7 @@ export const LLM_FALLBACK_RESPONSE = {
  */
 export const LLM_CONFIG = {
   temperature: 0.95,
-  maxOutputTokens: 200,
+  maxOutputTokens: 1024,
   responseMimeType: "application/json",
   responseSchema: {
     type: "OBJECT",
@@ -183,6 +183,7 @@ export const LLM_CONFIG = {
     },
     required: ["action", "internal_thought", "public_comment"],
   },
+  thinkingConfig: { thinkingBudget: 0 },
 };
 
 // ----------------------------------------------------------------------------
