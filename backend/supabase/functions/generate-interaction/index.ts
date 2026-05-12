@@ -7,22 +7,23 @@ import {
   getIgnoreRule,
   LLM_CONFIG,
   LLM_FALLBACK_RESPONSE,
-} from "../../../../frontend/src/lib/prompts/interaction.ts";
-import { findRelevantSamples } from "../../../../frontend/src/lib/prompts/sample-finder.ts";
-import { PERSONALITY_SAMPLES } from "../../../../frontend/src/lib/prompts/personality-samples.ts";
+} from "../_shared/prompts/interaction.ts";
+import { findRelevantSamples } from "../_shared/prompts/sample-finder.ts";
+import { PERSONALITY_SAMPLES } from "../_shared/prompts/personality-samples.ts";
 import {
   getDominantCategory,
   getSkillAttitude,
-} from "../../../../frontend/src/lib/prompts/skill-meta.ts";
-import { pickResponseMood } from "../../../../frontend/src/lib/prompts/response-mood.ts";
+} from "../_shared/prompts/skill-meta.ts";
+import { pickResponseMood } from "../_shared/prompts/response-mood.ts";
 import {
   findMatchingTopics,
   TOPIC_BY_ID,
-} from "../../../../frontend/src/lib/daily-events/topic-catalog.ts";
+} from "../_shared/daily-events/topic-catalog.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
@@ -38,7 +39,10 @@ serve(async (req) => {
     if (!token) {
       return new Response(
         JSON.stringify({ error: "Authorization header ausente" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -47,11 +51,12 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
         global: { headers: { Authorization: `Bearer ${token}` } },
-      }
+      },
     );
 
     // Valida o JWT do usuário explicitamente
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    const { data: userData, error: userError } =
+      await supabaseClient.auth.getUser(token);
 
     if (userError || !userData?.user) {
       console.error("Auth failure:", userError);
@@ -59,7 +64,10 @@ serve(async (req) => {
         JSON.stringify({
           error: `Não autorizado: ${userError?.message ?? "usuário não encontrado pelo token"}`,
         }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -98,10 +106,13 @@ serve(async (req) => {
     const formattedSkills = formatDNA(skillsData);
 
     if (profile.energy <= 0) {
-      return new Response(JSON.stringify({ error: "Sem energia suficiente." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Sem energia suficiente." }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // 2. Buscar conteúdo do post
@@ -124,35 +135,44 @@ serve(async (req) => {
     const skillAttitude = topSkillId ? getSkillAttitude(topSkillId) : null;
 
     // 3.1. Camada dinâmica: conhecimento adquirido + gostos/desgostos do IDO
-    const [{ data: knowledgeRows }, { data: preferenceRows }] = await Promise.all([
-      supabaseClient
-        .from("ido_knowledge")
-        .select("topic_id")
-        .eq("user_id", user.id),
-      supabaseClient
-        .from("ido_preferences")
-        .select("topic_id, stance")
-        .eq("user_id", user.id),
-    ]);
+    const [{ data: knowledgeRows }, { data: preferenceRows }] =
+      await Promise.all([
+        supabaseClient
+          .from("ido_knowledge")
+          .select("topic_id")
+          .eq("user_id", user.id),
+        supabaseClient
+          .from("ido_preferences")
+          .select("topic_id, stance")
+          .eq("user_id", user.id),
+      ]);
 
-    const knownTopicIds = (knowledgeRows ?? []).map((r: { topic_id: string }) => r.topic_id);
+    const knownTopicIds = (knowledgeRows ?? []).map(
+      (r: { topic_id: string }) => r.topic_id,
+    );
     const preferenceMap = new Map<string, "like" | "dislike">(
-      (preferenceRows ?? []).map((r: { topic_id: string; stance: "like" | "dislike" }) => [
-        r.topic_id,
-        r.stance,
-      ])
+      (preferenceRows ?? []).map(
+        (r: { topic_id: string; stance: "like" | "dislike" }) => [
+          r.topic_id,
+          r.stance,
+        ],
+      ),
     );
 
-    const matchedKnowledge = findMatchingTopics(postContent, knownTopicIds).map((t) => t.label);
+    const matchedKnowledge = findMatchingTopics(postContent, knownTopicIds).map(
+      (t) => t.label,
+    );
     const matchedPreferences = findMatchingTopics(
       postContent,
-      Array.from(preferenceMap.keys())
+      Array.from(preferenceMap.keys()),
     )
       .map((t) => {
         const stance = preferenceMap.get(t.id);
         return stance ? { topic: t.label, stance } : null;
       })
-      .filter((x): x is { topic: string; stance: "like" | "dislike" } => Boolean(x));
+      .filter((x): x is { topic: string; stance: "like" | "dislike" } =>
+        Boolean(x),
+      );
 
     // Keeps TOPIC_BY_ID warm for any future direct lookup; silences lint on Deno.
     void TOPIC_BY_ID;
@@ -229,7 +249,7 @@ serve(async (req) => {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: LLM_CONFIG,
           }),
-        }
+        },
       );
 
       const geminiData = await geminiRes.json();
@@ -237,12 +257,13 @@ serve(async (req) => {
       if (!geminiRes.ok) {
         console.error("Gemini API Error:", JSON.stringify(geminiData));
         throw new Error(
-          `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro desconhecido"}`
+          `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro desconhecido"}`,
         );
       }
 
       // Extrair o texto
-      const generatedText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "{}";
+      const generatedText =
+        geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "{}";
       try {
         generatedResponse = JSON.parse(generatedText);
       } catch (_e) {
@@ -273,7 +294,7 @@ serve(async (req) => {
         .from("post_likes")
         .upsert(
           { post_id: post_id, ido_id: user.id },
-          { onConflict: "post_id, ido_id" }
+          { onConflict: "post_id, ido_id" },
         );
       if (likeError) {
         throw likeError;
@@ -283,7 +304,7 @@ serve(async (req) => {
         .from("post_dislikes")
         .upsert(
           { post_id: post_id, ido_id: user.id },
-          { onConflict: "post_id, ido_id" }
+          { onConflict: "post_id, ido_id" },
         );
       if (dislikeError) {
         throw dislikeError;
@@ -293,7 +314,7 @@ serve(async (req) => {
         .from("post_shares")
         .upsert(
           { post_id: post_id, ido_id: user.id },
-          { onConflict: "post_id, ido_id" }
+          { onConflict: "post_id, ido_id" },
         );
       if (shareError) {
         throw shareError;
@@ -304,10 +325,10 @@ serve(async (req) => {
     let newXp = profile.xp + 10;
     let newLevel = profile.level;
     let newPoints = profile.points;
-    
+
     // Matemática do GDD: XP_Necessário = Level_Atual * 10
     const xpNeeded = profile.level * 10;
-    
+
     if (newXp >= xpNeeded) {
       newLevel += 1;
       newXp = newXp - xpNeeded; // O excedente não é perdido
@@ -316,23 +337,30 @@ serve(async (req) => {
 
     const { error: updateError } = await supabaseClient
       .from("profiles")
-      .update({ 
+      .update({
         energy: profile.energy - 1,
         xp: newXp,
         level: newLevel,
-        points: newPoints
+        points: newPoints,
       })
       .eq("id", user.id);
 
     if (updateError) {
-       console.error("Erro ao abater energia:", updateError);
+      console.error("Erro ao abater energia:", updateError);
     }
 
     // Retorno do Sucesso (Devolvemos o JSON cru para o Modal de UI)
-    return new Response(JSON.stringify({ success: true, ai_response: generatedResponse, interaction }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        ai_response: generatedResponse,
+        interaction,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (error: any) {
     console.error(error);
     return new Response(JSON.stringify({ error: error.message }), {

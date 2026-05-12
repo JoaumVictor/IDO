@@ -1,13 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import {
-  formatDNA,
-  getAgePrompt,
-} from "../../../../frontend/src/lib/prompts/interaction.ts";
+import { formatDNA, getAgePrompt } from "../_shared/prompts/interaction.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 const POST_LLM_CONFIG = {
@@ -16,7 +14,9 @@ const POST_LLM_CONFIG = {
   responseMimeType: "application/json",
 };
 
-const FALLBACK = { content: "Hoje eu pensei nisso, mas as palavras ainda não chegaram." };
+const FALLBACK = {
+  content: "Hoje eu pensei nisso, mas as palavras ainda não chegaram.",
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -27,19 +27,23 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace(/^Bearer\s+/i, "").trim();
     if (!token) {
-      return new Response(JSON.stringify({ error: "Authorization header ausente" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Authorization header ausente" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: `Bearer ${token}` } } }
+      { global: { headers: { Authorization: `Bearer ${token}` } } },
     );
 
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    const { data: userData, error: userError } =
+      await supabaseClient.auth.getUser(token);
     if (userError || !userData?.user) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
         status: 401,
@@ -104,12 +108,14 @@ FORMATO DA RESPOSTA — JSON ESTRITO:
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: POST_LLM_CONFIG,
         }),
-      }
+      },
     );
 
     const geminiData = await geminiRes.json();
     if (!geminiRes.ok) {
-      throw new Error(`Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro"}`);
+      throw new Error(
+        `Falha no Gemini (${geminiRes.status}): ${geminiData?.error?.message ?? "erro"}`,
+      );
     }
 
     const generatedText: string =
@@ -122,7 +128,9 @@ FORMATO DA RESPOSTA — JSON ESTRITO:
       parsed = FALLBACK;
     }
 
-    const content = (parsed.content ?? "").toString().slice(0, 280).trim() || FALLBACK.content;
+    const content =
+      (parsed.content ?? "").toString().slice(0, 280).trim() ||
+      FALLBACK.content;
 
     return new Response(JSON.stringify({ content }), {
       status: 200,

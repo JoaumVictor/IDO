@@ -3,13 +3,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import {
   pickDialogue,
   type LevelBucket,
-} from "../../../../frontend/src/lib/daily-events/dialogues.ts";
-import { pickThemes } from "../../../../frontend/src/lib/daily-events/post-themes.ts";
-import type { DailyEventType } from "../../../../frontend/src/lib/daily-events/types.ts";
+} from "../_shared/daily-events/dialogues.ts";
+import { pickThemes } from "../_shared/daily-events/post-themes.ts";
+import type { DailyEventType } from "../_shared/daily-events/types.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 const ENERGY_CAP = 5;
@@ -59,10 +60,13 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace(/^Bearer\s+/i, "").trim();
     if (!token) {
-      return new Response(JSON.stringify({ error: "Authorization header ausente" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Authorization header ausente" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -73,7 +77,8 @@ serve(async (req) => {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
 
-    const { data: userData, error: userError } = await userClient.auth.getUser(token);
+    const { data: userData, error: userError } =
+      await userClient.auth.getUser(token);
     if (userError || !userData?.user) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
         status: 401,
@@ -92,10 +97,19 @@ serve(async (req) => {
       .maybeSingle();
 
     const now = new Date();
-    if (dailyRow?.last_rolled_at && isSameSaoPauloDay(new Date(dailyRow.last_rolled_at), now)) {
+    if (
+      dailyRow?.last_rolled_at &&
+      isSameSaoPauloDay(new Date(dailyRow.last_rolled_at), now)
+    ) {
       return new Response(
-        JSON.stringify({ already_rolled: true, event_type: dailyRow.last_event_type }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          already_rolled: true,
+          event_type: dailyRow.last_event_type,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -130,7 +144,9 @@ serve(async (req) => {
         .limit(50);
 
       if (candidates && candidates.length > 0) {
-        const picked = candidates[Math.floor(Math.random() * candidates.length)] as unknown as {
+        const picked = candidates[
+          Math.floor(Math.random() * candidates.length)
+        ] as unknown as {
           author_id: string;
           profiles: { id: string; email: string; level: number };
         };
@@ -147,23 +163,26 @@ serve(async (req) => {
     }
 
     if (eventType === "random_message") {
-      payload = { ido_line: pickDialogue("random_message", profile.level, seed) };
+      payload = {
+        ido_line: pickDialogue("random_message", profile.level, seed),
+      };
     } else if (eventType === "post_suggestion") {
       payload = {
         themes: pickThemes(topSkillIds, 3, seed),
         ido_line: pickDialogue("post_suggestion", profile.level, seed),
       };
     } else if (eventType === "knowledge") {
-      const { data: catalog } = await adminClient.from("topic_catalog").select("id, label");
+      const { data: catalog } = await adminClient
+        .from("topic_catalog")
+        .select("id, label");
       const { data: known } = await adminClient
         .from("ido_knowledge")
         .select("topic_id")
         .eq("user_id", user.id);
       const knownIds = new Set((known ?? []).map((k) => k.topic_id));
       const pool = (catalog ?? []).filter((t) => !knownIds.has(t.id));
-      const picked = pool.length > 0
-        ? pool[Math.floor(Math.random() * pool.length)]
-        : null;
+      const picked =
+        pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
       if (picked) {
         await adminClient
           .from("ido_knowledge")
@@ -175,21 +194,25 @@ serve(async (req) => {
         };
       } else {
         eventType = "random_message";
-        payload = { ido_line: pickDialogue("random_message", profile.level, seed) };
+        payload = {
+          ido_line: pickDialogue("random_message", profile.level, seed),
+        };
       }
     } else if (eventType === "preference") {
-      const { data: catalog } = await adminClient.from("topic_catalog").select("id, label");
+      const { data: catalog } = await adminClient
+        .from("topic_catalog")
+        .select("id, label");
       const { data: existing } = await adminClient
         .from("ido_preferences")
         .select("topic_id")
         .eq("user_id", user.id);
       const usedIds = new Set((existing ?? []).map((k) => k.topic_id));
       const pool = (catalog ?? []).filter((t) => !usedIds.has(t.id));
-      const picked = pool.length > 0
-        ? pool[Math.floor(Math.random() * pool.length)]
-        : null;
+      const picked =
+        pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
       if (picked) {
-        const stance: "like" | "dislike" = Math.random() < 0.5 ? "like" : "dislike";
+        const stance: "like" | "dislike" =
+          Math.random() < 0.5 ? "like" : "dislike";
         await adminClient
           .from("ido_preferences")
           .insert({ user_id: user.id, topic_id: picked.id, stance });
@@ -201,7 +224,9 @@ serve(async (req) => {
         };
       } else {
         eventType = "random_message";
-        payload = { ido_line: pickDialogue("random_message", profile.level, seed) };
+        payload = {
+          ido_line: pickDialogue("random_message", profile.level, seed),
+        };
       }
     } else if (eventType === "energy_bonus") {
       const delta = 2;
@@ -232,13 +257,20 @@ serve(async (req) => {
     await adminClient
       .from("ido_daily_events")
       .upsert(
-        { user_id: user.id, last_rolled_at: now.toISOString(), last_event_type: eventType },
-        { onConflict: "user_id" }
+        {
+          user_id: user.id,
+          last_rolled_at: now.toISOString(),
+          last_event_type: eventType,
+        },
+        { onConflict: "user_id" },
       );
 
     return new Response(
       JSON.stringify({ already_rolled: false, event_type: eventType, payload }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
